@@ -1,16 +1,22 @@
-"use client"
+"use client";
 
-import { renderHook, act } from "@testing-library/react"
-import { useTheme } from "@/hooks/use-theme"
+import React from "react";
+import { renderHook, act } from "@testing-library/react";
+import { useTheme } from "../../lib/theme-context";
+import { ThemeProvider } from "../../lib/theme-context";
+
+const wrapper = ({ children }: { children: React.ReactNode }) => (
+  <ThemeProvider>{children}</ThemeProvider>
+);
 
 describe("useTheme Hook", () => {
   beforeEach(() => {
     // Clear localStorage
-    localStorage.clear()
+    localStorage.clear();
 
     // Reset document.documentElement.classList
-    document.documentElement.classList.remove("dark")
-  })
+    document.documentElement.classList.remove("dark");
+  });
 
   test("initializes with system preference", () => {
     // Mock window.matchMedia
@@ -26,45 +32,45 @@ describe("useTheme Hook", () => {
         removeEventListener: jest.fn(),
         dispatchEvent: jest.fn(),
       })),
-    })
+    });
 
-    const { result } = renderHook(() => useTheme())
+    const { result } = renderHook(() => useTheme(), { wrapper });
 
     // Should match system preference (dark in this case)
-    expect(result.current.theme).toBe("dark")
-    expect(document.documentElement.classList.contains("dark")).toBe(true)
-  })
+    expect(result.current.theme).toBe("dark");
+    expect(document.documentElement.classList.contains("dark")).toBe(true);
+  });
 
   test("changes theme correctly", () => {
-    const { result } = renderHook(() => useTheme())
+    const { result } = renderHook(() => useTheme(), { wrapper });
 
     act(() => {
-      result.current.setTheme("light")
-    })
+      result.current.setTheme("light");
+    });
 
-    expect(result.current.theme).toBe("light")
-    expect(document.documentElement.classList.contains("dark")).toBe(false)
+    expect(result.current.theme).toBe("light");
+    expect(document.documentElement.classList.contains("dark")).toBe(false);
 
     act(() => {
-      result.current.setTheme("dark")
-    })
+      result.current.setTheme("dark");
+    });
 
-    expect(result.current.theme).toBe("dark")
-    expect(document.documentElement.classList.contains("dark")).toBe(true)
-  })
+    expect(result.current.theme).toBe("dark");
+    expect(document.documentElement.classList.contains("dark")).toBe(true);
+  });
 
   test("persists theme preference to localStorage", () => {
-    const { result } = renderHook(() => useTheme())
+    const { result } = renderHook(() => useTheme(), { wrapper });
 
     act(() => {
-      result.current.setTheme("dark")
-    })
+      result.current.setTheme("dark");
+    });
 
-    expect(localStorage.getItem("theme")).toBe("dark")
+    expect(localStorage.getItem("theme")).toBe("dark");
 
     // Unmount and remount to test persistence
-    const { result: newResult } = renderHook(() => useTheme())
+    const { result: newResult } = renderHook(() => useTheme(), { wrapper });
 
-    expect(newResult.current.theme).toBe("dark")
-  })
-})
+    expect(newResult.current.theme).toBe("dark");
+  });
+});

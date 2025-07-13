@@ -1,94 +1,103 @@
-import { renderHook, act } from "@testing-library/react"
-import { useTasks } from "@/hooks/use-tasks"
+import React from "react";
+import { renderHook, act } from "@testing-library/react";
+import { useTasks } from "../../lib/task-context";
+import { TaskProvider } from "../../lib/task-context";
+import { AuthProvider } from "../../lib/auth-context";
+
+const wrapper = ({ children }: { children: React.ReactNode }) => (
+  <AuthProvider>
+    <TaskProvider>{children}</TaskProvider>
+  </AuthProvider>
+);
 
 describe("useTasks Hook", () => {
   beforeEach(() => {
-    localStorage.clear()
-  })
+    localStorage.clear();
+  });
 
   test("initializes with empty tasks array", () => {
-    const { result } = renderHook(() => useTasks())
+    const { result } = renderHook(() => useTasks(), { wrapper });
 
-    expect(result.current.tasks).toEqual([])
-  })
+    expect(result.current.tasks).toEqual([]);
+  });
 
   test("adds a task correctly", () => {
-    const { result } = renderHook(() => useTasks())
+    const { result } = renderHook(() => useTasks(), { wrapper });
 
     act(() => {
-      result.current.addTask("Test task")
-    })
+      result.current.addTask("Test task");
+    });
 
-    expect(result.current.tasks.length).toBe(1)
-    expect(result.current.tasks[0].title).toBe("Test task")
-    expect(result.current.tasks[0].completed).toBe(false)
-  })
+    expect(result.current.tasks.length).toBe(1);
+    expect(result.current.tasks[0].title).toBe("Test task");
+    expect(result.current.tasks[0].completed).toBe(false);
+  });
 
   test("toggles task completion correctly", () => {
-    const { result } = renderHook(() => useTasks())
+    const { result } = renderHook(() => useTasks(), { wrapper });
 
     act(() => {
-      result.current.addTask("Test task")
-    })
+      result.current.addTask("Test task");
+    });
 
-    const taskId = result.current.tasks[0].id
-
-    act(() => {
-      result.current.toggleTaskCompletion(taskId)
-    })
-
-    expect(result.current.tasks[0].completed).toBe(true)
+    const taskId = result.current.tasks[0].id;
 
     act(() => {
-      result.current.toggleTaskCompletion(taskId)
-    })
+      result.current.toggleTask(taskId);
+    });
 
-    expect(result.current.tasks[0].completed).toBe(false)
-  })
+    expect(result.current.tasks[0].completed).toBe(true);
+
+    act(() => {
+      result.current.toggleTask(taskId);
+    });
+
+    expect(result.current.tasks[0].completed).toBe(false);
+  });
 
   test("deletes a task correctly", () => {
-    const { result } = renderHook(() => useTasks())
+    const { result } = renderHook(() => useTasks(), { wrapper });
 
     act(() => {
-      result.current.addTask("Test task")
-    })
+      result.current.addTask("Test task");
+    });
 
-    const taskId = result.current.tasks[0].id
+    const taskId = result.current.tasks[0].id;
 
     act(() => {
-      result.current.deleteTask(taskId)
-    })
+      result.current.removeTask(taskId);
+    });
 
-    expect(result.current.tasks.length).toBe(0)
-  })
+    expect(result.current.tasks.length).toBe(0);
+  });
 
   test("updates a task correctly", () => {
-    const { result } = renderHook(() => useTasks())
+    const { result } = renderHook(() => useTasks(), { wrapper });
 
     act(() => {
-      result.current.addTask("Test task")
-    })
+      result.current.addTask("Test task");
+    });
 
-    const taskId = result.current.tasks[0].id
+    const taskId = result.current.tasks[0].id;
 
     act(() => {
-      result.current.updateTask(taskId, "Updated task")
-    })
+      result.current.updateTask(taskId, { title: "Updated task" });
+    });
 
-    expect(result.current.tasks[0].title).toBe("Updated task")
-  })
+    expect(result.current.tasks[0].title).toBe("Updated task");
+  });
 
   test("persists tasks to localStorage", () => {
-    const { result, rerender } = renderHook(() => useTasks())
+    const { result, rerender } = renderHook(() => useTasks(), { wrapper });
 
     act(() => {
-      result.current.addTask("Test task")
-    })
+      result.current.addTask("Test task");
+    });
 
     // Simulate component unmount and remount
-    rerender()
+    rerender();
 
-    expect(result.current.tasks.length).toBe(1)
-    expect(result.current.tasks[0].title).toBe("Test task")
-  })
-})
+    expect(result.current.tasks.length).toBe(1);
+    expect(result.current.tasks[0].title).toBe("Test task");
+  });
+});

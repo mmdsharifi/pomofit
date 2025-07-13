@@ -1,51 +1,54 @@
-import type React from "react"
-import "@/styles/globals.css"
-import { Spline_Sans_Mono, Spline_Sans } from "next/font/google"
-import { Toaster } from "@/components/ui/toaster"
-import { ThemeProvider } from "@/lib/theme-context"
-import { TaskProvider } from "@/lib/task-context"
-import { AuthProvider } from "@/lib/auth-context"
+import type React from "react";
+import "@/styles/globals.css";
+import { Spline_Sans_Mono, Spline_Sans } from "next/font/google";
+import { Toaster } from "@/components/ui/toaster";
+import { ThemeProvider } from "@/lib/theme-context";
+import { TaskProvider } from "@/lib/task-context";
+import { AuthProvider } from "@/lib/auth-context";
+import { StagewiseToolbar } from "@stagewise/toolbar-next";
+import ReactPlugin from "@stagewise-plugins/react";
 
 // Load fonts with optional fallback
 const splineSans = Spline_Sans({
   subsets: ["latin"],
   display: "swap",
   fallback: ["system-ui", "sans-serif"],
-})
+});
 
 const splineSansMono = Spline_Sans_Mono({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-spline-sans-mono",
   fallback: ["monospace"],
-})
+});
 
 export const metadata = {
   title: "Pomofit - Pomodoro Timer with Workouts",
   description: "Boost your productivity and fitness with Pomofit",
   manifest: "/manifest.json",
-  themeColor: "#ff6b00",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "Pomofit",
   },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
   formatDetection: {
     telephone: false,
   },
-    generator: 'v0.dev'
-}
+  generator: "v0.dev",
+};
+
+export const viewport = {
+  themeColor: "#ff6b00",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -60,17 +63,42 @@ export default function RootLayout({
         <meta name="theme-color" content="#ff6b00" />
 
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-        <link rel="apple-touch-icon" sizes="152x152" href="/icons/apple-touch-icon-152x152.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon-180x180.png" />
-        <link rel="apple-touch-icon" sizes="167x167" href="/icons/apple-touch-icon-167x167.png" />
+        <link
+          rel="apple-touch-icon"
+          sizes="152x152"
+          href="/icons/apple-touch-icon-152x152.png"
+        />
+        <link
+          rel="apple-touch-icon"
+          sizes="180x180"
+          href="/icons/apple-touch-icon-180x180.png"
+        />
+        <link
+          rel="apple-touch-icon"
+          sizes="167x167"
+          href="/icons/apple-touch-icon-167x167.png"
+        />
 
-        <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png" />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="32x32"
+          href="/icons/favicon-32x32.png"
+        />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="16x16"
+          href="/icons/favicon-16x16.png"
+        />
         <link rel="manifest" href="/manifest.json" />
         <link rel="shortcut icon" href="/favicon.ico" />
 
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta
+          name="apple-mobile-web-app-status-bar-style"
+          content="black-translucent"
+        />
 
         {/* iOS splash screens */}
         <link
@@ -125,10 +153,11 @@ export default function RootLayout({
             <TaskProvider>
               {children}
               <Toaster />
+              <StagewiseToolbar config={{ plugins: [ReactPlugin()] }} />
             </TaskProvider>
           </ThemeProvider>
         </AuthProvider>
       </body>
     </html>
-  )
+  );
 }

@@ -42,7 +42,7 @@ E2E tests verify that the application works correctly from a user's perspective,
 
 ### During Development
 
-```bash
+\`\`\`bash
 # Run tests in watch mode
 npm run test:watch
 

@@ -6,7 +6,7 @@ const CACHE_NAME = "pomofit-cache-v2" // Increment cache version
 const PRECACHE_ASSETS = [
   "/",
   "/manifest.json",
-  "/success-83493.mp3",
+  "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/git-blob/prj_uz4IPigRBv8XTydickOuMOFjyuqo/zBJu5-JPmFmAcN0trz4slO/public/success-83493.mp3",
   "/icons/icon-192x192.png",
   "/icons/icon-512x512.png",
   "/favicon.ico",

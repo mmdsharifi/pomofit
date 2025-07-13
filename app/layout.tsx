@@ -153,7 +153,7 @@ export default function RootLayout({
             <TaskProvider>
               {children}
               <Toaster />
-              <StagewiseToolbar config={{ plugins: [ReactPlugin()] }} />
+              {/* <StagewiseToolbar config={{ plugins: [ReactPlugin] }} /> */}
             </TaskProvider>
           </ThemeProvider>
         </AuthProvider>

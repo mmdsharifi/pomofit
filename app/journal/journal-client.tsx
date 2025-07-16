@@ -5,6 +5,7 @@ import { JournalCalendar } from "@/components/journal/journal-calendar";
 import { JournalEditor } from "@/components/journal/journal-editor";
 import { JournalChat } from "@/components/journal/journal-chat";
 import { JournalHistory } from "@/components/journal/journal-history";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export interface JournalEntry {
   id: string;
@@ -14,6 +15,21 @@ export interface JournalEntry {
   createdAt: Date;
   updatedAt: Date;
   type: "daily" | "custom";
+}
+
+// Inline hook for mobile or tablet detection (width < 1024px)
+function useIsMobileOrTablet() {
+  const [isMobileOrTablet, setIsMobileOrTablet] = useState(false);
+  useEffect(() => {
+    const check = () => {
+      const w = window.innerWidth;
+      setIsMobileOrTablet(w < 1024);
+    };
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+  return isMobileOrTablet;
 }
 
 export default function JournalClient() {
@@ -154,11 +170,69 @@ export default function JournalClient() {
     };
   }, [selectedDate]);
 
+  const isMobileOrTablet = useIsMobileOrTablet();
+
+  if (isMobileOrTablet) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="min-h-screen pt-14">
+          <Tabs defaultValue="journals" className="w-full">
+            <TabsList className="w-full grid grid-cols-3 mb-2">
+              <TabsTrigger value="journals">Journals</TabsTrigger>
+              <TabsTrigger value="editor">Editor</TabsTrigger>
+              <TabsTrigger value="ai">AI</TabsTrigger>
+            </TabsList>
+            <TabsContent value="journals">
+              <div className="space-y-6 pr-2 h-full flex flex-col">
+                <div className="flex-1 flex flex-col">
+                  <div className="mb-4">
+                    <JournalCalendar
+                      selectedDate={selectedDate}
+                      onDateSelect={handleDateSelect}
+                      journals={journals}
+                    />
+                  </div>
+                  <JournalHistory
+                    journals={journals.filter((j) => j.type === "custom")}
+                    onEntrySelect={handleEntrySelect}
+                    onEntryDelete={deleteJournalEntry}
+                    selectedEntry={selectedEntry}
+                    onCreateJournal={handleCreateJournalEntry}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+            <TabsContent value="editor">
+              <JournalEditor
+                selectedDate={selectedDate}
+                selectedEntry={selectedEntry}
+                onSave={saveJournalEntry}
+              />
+            </TabsContent>
+            <TabsContent value="ai">
+              <div className="h-full flex flex-col">
+                <div className="flex-1 flex flex-col">
+                  <JournalChat
+                    journals={journals}
+                    onAddTasks={(tasks) => {
+                      // This will be implemented to add tasks to the main task list
+                      console.log("Adding tasks:", tasks);
+                    }}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Main Layout */}
       <div className="min-h-screen">
-        <div className="grid grid-cols-12 gap-2 min-h-screen pt-14">
+        <div className="grid grid-cols-12 gap-2 min-h-[60vh] sm:min-h-[80vh] md:min-h-screen pt-14">
           {/* Left Column - Calendar & History */}
           <div className="col-span-3 space-y-6 pr-2 h-full flex flex-col">
             <div className="flex-1 flex flex-col">

@@ -184,11 +184,7 @@ export default function Timer({ useIconButtons = false }: TimerProps) {
         )}
 
         {/* Timer type label for Cypress tests */}
-        <div className="text-lg font-semibold mt-2" data-testid="timer-type">
-          {mode === "pomodoro" && "Pomodoro"}
-          {mode === "shortBreak" && "Short Break"}
-          {mode === "longBreak" && "Long Break"}
-        </div>
+        {/* Removed Pomodoro/Short Break/Long Break title above timer as per user request */}
         <div
           className="text-7xl font-bold tabular-nums font-mono timer-display"
           data-testid="timer-display"
@@ -197,32 +193,7 @@ export default function Timer({ useIconButtons = false }: TimerProps) {
         </div>
 
         {/* Mode change buttons for Cypress tests */}
-        <div className="flex space-x-2 mt-4">
-          <Button
-            variant={mode === "pomodoro" ? "default" : "ghost"}
-            onClick={() => handleModeChange("pomodoro")}
-            className="mx-1"
-            data-testid="pomodoro-button"
-          >
-            Pomodoro
-          </Button>
-          <Button
-            variant={mode === "shortBreak" ? "default" : "ghost"}
-            onClick={() => handleModeChange("shortBreak")}
-            className="mx-1"
-            data-testid="short-break-button"
-          >
-            Short Break
-          </Button>
-          <Button
-            variant={mode === "longBreak" ? "default" : "ghost"}
-            onClick={() => handleModeChange("longBreak")}
-            className="mx-1"
-            data-testid="long-break-button"
-          >
-            Long Break
-          </Button>
-        </div>
+        {/* Removed Pomodoro/Short Break/Long Break buttons as per user request */}
 
         {/* Progress dots below the timer */}
         <div className="flex flex-wrap items-center justify-center gap-2 mt-4 max-w-xs">

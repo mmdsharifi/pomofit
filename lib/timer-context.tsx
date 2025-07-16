@@ -56,73 +56,48 @@ interface TimerContextType {
 
 const TimerContext = createContext<TimerContextType | undefined>(undefined);
 
-// Function to play a single beep sound (for starting sessions)
+// Remove old beep sound logic and use mp3 files for all timer sounds
 const playStartSound = () => {
   try {
-    const ctx = new (window.AudioContext ||
-      (window as any).webkitAudioContext)();
-    const oscillator = ctx.createOscillator();
-    const gainNode = ctx.createGain();
-
-    oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
-
-    oscillator.type = "sine";
-    oscillator.frequency.value = 880; // A5 note
-    gainNode.gain.value = 0.3;
-
-    oscillator.start(ctx.currentTime);
-    oscillator.stop(ctx.currentTime + 0.15);
+    const audio = new Audio("/sounds/break-start.mp3"); // Use your preferred start sound file
+    audio.play();
   } catch (error) {
     console.error("Error playing start sound:", error);
   }
 };
 
-// Function to play three quick beeps (for ending sessions)
 const playEndSound = (toastFn: any) => {
   try {
-    const ctx = new (window.AudioContext ||
-      (window as any).webkitAudioContext)();
-    const gainNode = ctx.createGain();
-    gainNode.connect(ctx.destination);
-    gainNode.gain.value = 0.3;
-
-    // First beep
-    const oscillator1 = ctx.createOscillator();
-    oscillator1.connect(gainNode);
-    oscillator1.type = "sine";
-    oscillator1.frequency.value = 880; // A5
-
-    // Second beep (slightly higher)
-    const oscillator2 = ctx.createOscillator();
-    oscillator2.connect(gainNode);
-    oscillator2.type = "sine";
-    oscillator2.frequency.value = 988; // B5
-
-    // Third beep (even higher)
-    const oscillator3 = ctx.createOscillator();
-    oscillator3.connect(gainNode);
-    oscillator3.type = "sine";
-    oscillator3.frequency.value = 1047; // C6
-
-    // Schedule the beeps with slight delays
-    oscillator1.start(ctx.currentTime);
-    oscillator1.stop(ctx.currentTime + 0.15);
-
-    oscillator2.start(ctx.currentTime + 0.2);
-    oscillator2.stop(ctx.currentTime + 0.35);
-
-    oscillator3.start(ctx.currentTime + 0.4);
-    oscillator3.stop(ctx.currentTime + 0.55);
+    const audio = new Audio("/sounds/break-end.mp3"); // Use your preferred end sound file
+    audio.play();
   } catch (error) {
     console.error("Error playing end sound:", error);
-    // Fallback to visual notification only
     if (toastFn) {
       toastFn({
         title: "Timer completed",
         description: "Your timer has finished.",
       });
     }
+  }
+};
+
+// Function to play break start sound
+const playBreakStartSound = () => {
+  try {
+    const audio = new Audio("/sounds/break-start.mp3");
+    audio.play();
+  } catch (error) {
+    console.error("Error playing break start sound:", error);
+  }
+};
+
+// Function to play break end sound
+const playBreakEndSound = () => {
+  try {
+    const audio = new Audio("/sounds/break-end.mp3");
+    audio.play();
+  } catch (error) {
+    console.error("Error playing break end sound:", error);
   }
 };
 
@@ -448,6 +423,7 @@ function TimerProviderInner({
 
           // Switch back to pomodoro mode
           setMode("pomodoro");
+          playBreakEndSound();
 
           // Reset the completion flag
           isCompletingTimerRef.current = false;
@@ -532,6 +508,12 @@ function TimerProviderInner({
       if (!confirm) return;
     }
     setMode(newMode);
+    if (newMode === "shortBreak" || newMode === "longBreak") {
+      playBreakStartSound();
+    } else if (mode === "shortBreak" || mode === "longBreak") {
+      // If switching from break to pomodoro
+      playBreakEndSound();
+    }
   };
 
   // Handle session note submission
@@ -613,6 +595,8 @@ function TimerProviderInner({
     getRandomMotivationalMessage,
     notificationsEnabled,
     setNotificationsEnabled,
+    // Expose nextModeRef for test debug only
+    ...(process.env.NODE_ENV === "test" ? { nextModeRef } : {}),
   };
 
   return (

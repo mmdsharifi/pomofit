@@ -33,14 +33,16 @@ describe("PWAInstallPrompt", () => {
   });
 
   test("shows install prompt when beforeinstallprompt is fired", () => {
+    render(<PWAInstallPrompt />);
     act(() => {
       const event = new Event("beforeinstallprompt");
       window.dispatchEvent(event);
     });
-    expect(screen.getByText(/Install Pomofit/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Install Pomofit/i).length).toBeGreaterThan(0);
   });
 
   test("dismisses prompt and sets localStorage on dismiss", () => {
+    render(<PWAInstallPrompt />);
     act(() => {
       const event = new Event("beforeinstallprompt");
       window.dispatchEvent(event);

@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Play, Pause, RotateCcw, X, Check, List } from "lucide-react"
-import WorkoutDisplay from "@/components/workout-display"
-import SessionNoteDialog from "@/components/session-note-dialog"
-import { useTimer } from "@/lib/timer-context"
+import { Button } from "@/components/ui/button";
+import { Play, Pause, RotateCcw, X, Check, List } from "lucide-react";
+import WorkoutDisplay from "@/components/workout-display";
+import SessionNoteDialog from "@/components/session-note-dialog";
+import { useTimer } from "@/lib/timer-context";
 import {
   Dialog,
   DialogContent,
@@ -12,16 +12,21 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { useState, useEffect, useRef } from "react"
-import { cn } from "@/lib/utils"
-import { useTasks } from "@/lib/task-context"
-import { TaskList, useTaskList } from "@/components/task-list"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Badge } from "@/components/ui/badge"
+} from "@/components/ui/dialog";
+import { useState, useEffect, useRef } from "react";
+import { cn } from "@/lib/utils";
+import { useTasks } from "@/lib/task-context";
+import { TaskList, useTaskList } from "@/components/task-list";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 
 interface TimerProps {
-  useIconButtons?: boolean
+  useIconButtons?: boolean;
 }
 
 export default function Timer({ useIconButtons = false }: TimerProps) {
@@ -44,60 +49,60 @@ export default function Timer({ useIconButtons = false }: TimerProps) {
     setShowGoalReachedModal,
     playConfetti,
     setPlayConfetti,
-  } = useTimer()
+  } = useTimer();
 
-  const { tasks, currentTaskId, toggleTask, setCurrentTaskId } = useTasks()
-  const { setOpen } = useTaskList()
-  const currentTask = tasks.find((task) => task.id === currentTaskId)
+  const { tasks, currentTaskId, toggleTask, setCurrentTaskId } = useTasks();
+  const { setOpen } = useTaskList();
+  const currentTask = tasks.find((task) => task.id === currentTaskId);
 
   // Store motivational message in a ref to prevent re-renders and ensure consistency
-  const motivationalMessageRef = useRef("")
-  const prevModeRef = useRef(mode)
-  const sessionIdRef = useRef("")
+  const motivationalMessageRef = useRef("");
+  const prevModeRef = useRef(mode);
+  const sessionIdRef = useRef("");
 
   // Use a ref to track if we've already incremented the pomodoro count
-  const hasIncrementedPomodoroRef = useRef(false)
+  const hasIncrementedPomodoroRef = useRef(false);
 
-  const [showResetConfirmation, setShowResetConfirmation] = useState(false)
+  const [showResetConfirmation, setShowResetConfirmation] = useState(false);
 
   // Create an array of the total number of pomodoros (goal)
-  const pomodoroGoal = settings.pomodoroGoal || 8
+  const pomodoroGoal = settings.pomodoroGoal || 8;
 
-  const isBreakMode = mode === "shortBreak" || mode === "longBreak"
+  const isBreakMode = mode === "shortBreak" || mode === "longBreak";
 
   // Get a random motivational message only when entering a new break session
   useEffect(() => {
     // Generate a new session ID when mode changes from non-break to break
     if (isBreakMode && prevModeRef.current !== mode) {
-      sessionIdRef.current = Date.now().toString()
-      motivationalMessageRef.current = getRandomMotivationalMessage()
+      sessionIdRef.current = Date.now().toString();
+      motivationalMessageRef.current = getRandomMotivationalMessage();
     }
 
     // Reset the increment flag when mode changes
     if (prevModeRef.current !== mode) {
-      hasIncrementedPomodoroRef.current = false
+      hasIncrementedPomodoroRef.current = false;
     }
 
-    prevModeRef.current = mode
-  }, [isBreakMode, mode, getRandomMotivationalMessage])
+    prevModeRef.current = mode;
+  }, [isBreakMode, mode, getRandomMotivationalMessage]);
 
   // Find the reset button and add aria-label
   const handleResetButtonClick = () => {
-    setShowResetConfirmation(true)
-  }
+    setShowResetConfirmation(true);
+  };
 
   // Handle cancel break and start new pomodoro after confirmation
   const handleCancelBreak = () => {
-    setShowResetConfirmation(false)
+    setShowResetConfirmation(false);
     if (mode === "shortBreak" || mode === "longBreak") {
-      handleModeChange("pomodoro")
+      handleModeChange("pomodoro");
     } else {
-      resetTimer()
+      resetTimer();
     }
-  }
+  };
 
   // Determine if user has exceeded their goal
-  const hasExceededGoal = pomodorosCompleted > pomodoroGoal
+  const hasExceededGoal = pomodorosCompleted > pomodoroGoal;
 
   return (
     <div className="flex flex-col items-center justify-center w-full h-full">
@@ -117,22 +122,33 @@ export default function Timer({ useIconButtons = false }: TimerProps) {
                     <div
                       className={cn(
                         "h-4 w-4 rounded-full border-2",
-                        currentTask.completed ? "border-primary bg-primary text-primary-foreground" : "border-primary",
+                        currentTask.completed
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-primary"
                       )}
                     >
                       {currentTask.completed && <Check className="h-3 w-3" />}
                     </div>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Mark as {currentTask.completed ? "incomplete" : "complete"}</TooltipContent>
+                <TooltipContent>
+                  Mark as {currentTask.completed ? "incomplete" : "complete"}
+                </TooltipContent>
               </Tooltip>
 
-              <span className={cn("text-sm z-10", currentTask.completed && "text-muted-foreground line-through")}>
+              <span
+                className={cn(
+                  "text-sm z-10",
+                  currentTask.completed && "text-muted-foreground line-through"
+                )}
+              >
                 {currentTask.title}
               </span>
 
               {/* Display Pomodoro count for the current task only if explicitly greater than 0 */}
-              {currentTask && typeof currentTask.pomodoros === "number" && currentTask.pomodoros > 0 ? (
+              {currentTask &&
+              typeof currentTask.pomodoros === "number" &&
+              currentTask.pomodoros > 0 ? (
                 <Badge
                   variant="outline"
                   className="font-mono text-xs z-10 ml-1 bg-gray-200 text-gray-600 border-gray-300 dark:bg-gray-700 dark:text-gray-400 dark:border-gray-600"
@@ -153,7 +169,9 @@ export default function Timer({ useIconButtons = false }: TimerProps) {
             </TooltipProvider>
           </div>
         ) : isBreakMode ? (
-          <div className="text-xs text-muted-foreground max-w-xs text-center">{motivationalMessageRef.current}</div>
+          <div className="text-xs text-muted-foreground max-w-xs text-center">
+            {motivationalMessageRef.current}
+          </div>
         ) : (
           <Button
             variant="ghost"
@@ -165,14 +183,54 @@ export default function Timer({ useIconButtons = false }: TimerProps) {
           </Button>
         )}
 
-        <div className="text-7xl font-bold tabular-nums font-mono timer-display">{formatTime(timeLeft)}</div>
+        {/* Timer type label for Cypress tests */}
+        <div className="text-lg font-semibold mt-2" data-testid="timer-type">
+          {mode === "pomodoro" && "Pomodoro"}
+          {mode === "shortBreak" && "Short Break"}
+          {mode === "longBreak" && "Long Break"}
+        </div>
+        <div
+          className="text-7xl font-bold tabular-nums font-mono timer-display"
+          data-testid="timer-display"
+        >
+          {formatTime(timeLeft)}
+        </div>
+
+        {/* Mode change buttons for Cypress tests */}
+        <div className="flex space-x-2 mt-4">
+          <Button
+            variant={mode === "pomodoro" ? "default" : "ghost"}
+            onClick={() => handleModeChange("pomodoro")}
+            className="mx-1"
+            data-testid="pomodoro-button"
+          >
+            Pomodoro
+          </Button>
+          <Button
+            variant={mode === "shortBreak" ? "default" : "ghost"}
+            onClick={() => handleModeChange("shortBreak")}
+            className="mx-1"
+            data-testid="short-break-button"
+          >
+            Short Break
+          </Button>
+          <Button
+            variant={mode === "longBreak" ? "default" : "ghost"}
+            onClick={() => handleModeChange("longBreak")}
+            className="mx-1"
+            data-testid="long-break-button"
+          >
+            Long Break
+          </Button>
+        </div>
 
         {/* Progress dots below the timer */}
         <div className="flex flex-wrap items-center justify-center gap-2 mt-4 max-w-xs">
           {/* Display the goal circles */}
           {Array.from({ length: pomodoroGoal }).map((_, index) => {
-            const isCompleted = index < pomodorosCompleted
-            const isActive = index === pomodorosCompleted && isRunning && mode === "pomodoro"
+            const isCompleted = index < pomodorosCompleted;
+            const isActive =
+              index === pomodorosCompleted && isRunning && mode === "pomodoro";
 
             return (
               <div
@@ -182,11 +240,11 @@ export default function Timer({ useIconButtons = false }: TimerProps) {
                   isCompleted
                     ? "w-3 h-3 bg-primary"
                     : isActive
-                      ? "w-8 h-3 bg-primary/10 border border-primary/30"
-                      : "w-3 h-3 border border-primary/30",
+                    ? "w-8 h-3 bg-primary/10 border border-primary/30"
+                    : "w-3 h-3 border border-primary/30",
                   {
                     "relative overflow-hidden": isActive,
-                  },
+                  }
                 )}
               >
                 {isActive && (
@@ -199,7 +257,7 @@ export default function Timer({ useIconButtons = false }: TimerProps) {
                   />
                 )}
               </div>
-            )
+            );
           })}
 
           {/* Display extra circles for sessions beyond the goal */}
@@ -208,18 +266,27 @@ export default function Timer({ useIconButtons = false }: TimerProps) {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-1 ml-1">
-                    {Array.from({ length: Math.min(pomodorosCompleted - pomodoroGoal, 5) }).map((_, index) => (
-                      <div key={`extra-${index}`} className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+                    {Array.from({
+                      length: Math.min(pomodorosCompleted - pomodoroGoal, 5),
+                    }).map((_, index) => (
+                      <div
+                        key={`extra-${index}`}
+                        className="w-3 h-3 rounded-full bg-green-500 animate-pulse"
+                      />
                     ))}
                     {pomodorosCompleted - pomodoroGoal > 5 && (
-                      <Badge variant="outline" className="ml-1 bg-green-500/10 text-green-500 border-green-500/30">
+                      <Badge
+                        variant="outline"
+                        className="ml-1 bg-green-500/10 text-green-500 border-green-500/30"
+                      >
                         +{pomodorosCompleted - pomodoroGoal}
                       </Badge>
                     )}
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  You've exceeded your daily goal by {pomodorosCompleted - pomodoroGoal} sessions! 🎉
+                  You've exceeded your daily goal by{" "}
+                  {pomodorosCompleted - pomodoroGoal} sessions! 🎉
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -233,8 +300,13 @@ export default function Timer({ useIconButtons = false }: TimerProps) {
             variant="ghost"
             className="rounded-full h-14 w-14 p-0"
             aria-label={isRunning ? "Pause timer" : "Start timer"}
+            data-testid={isRunning ? "pause-button" : "start-button"}
           >
-            {isRunning ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 ml-1" />}
+            {isRunning ? (
+              <Pause className="h-6 w-6" />
+            ) : (
+              <Play className="h-6 w-6 ml-1" />
+            )}
           </Button>
           {isRunning && (
             <Button
@@ -243,8 +315,13 @@ export default function Timer({ useIconButtons = false }: TimerProps) {
               size="lg"
               className="rounded-full h-14 w-14 p-0"
               aria-label={isBreakMode ? "Cancel break" : "Reset timer"}
+              data-testid={isBreakMode ? "cancel-break-button" : "reset-button"}
             >
-              {isBreakMode ? <X className="h-6 w-6" /> : <RotateCcw className="h-6 w-6" />}
+              {isBreakMode ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <RotateCcw className="h-6 w-6" />
+              )}
             </Button>
           )}
         </div>
@@ -254,23 +331,36 @@ export default function Timer({ useIconButtons = false }: TimerProps) {
       {isBreakMode && <WorkoutDisplay isActive={isRunning} mode={mode} />}
 
       {/* Dialog for adding notes to completed sessions */}
-      <SessionNoteDialog open={showNoteDialog} onOpenChange={setShowNoteDialog} onSubmit={handleNoteSubmit} />
+      <SessionNoteDialog
+        open={showNoteDialog}
+        onOpenChange={setShowNoteDialog}
+        onSubmit={handleNoteSubmit}
+      />
 
       {/* Reset confirmation modal */}
-      <Dialog open={showResetConfirmation} onOpenChange={setShowResetConfirmation}>
+      <Dialog
+        open={showResetConfirmation}
+        onOpenChange={setShowResetConfirmation}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Confirm Reset</DialogTitle>
             <DialogDescription>
-              Are you sure you want to {isBreakMode ? "cancel your break" : "reset the timer"}? Your current progress
-              will be lost.
+              Are you sure you want to{" "}
+              {isBreakMode ? "cancel your break" : "reset the timer"}? Your
+              current progress will be lost.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowResetConfirmation(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowResetConfirmation(false)}
+            >
               Cancel
             </Button>
-            <Button onClick={handleCancelBreak}>{isBreakMode ? "End Break" : "Reset Timer"}</Button>
+            <Button onClick={handleCancelBreak}>
+              {isBreakMode ? "End Break" : "Reset Timer"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -278,5 +368,5 @@ export default function Timer({ useIconButtons = false }: TimerProps) {
       {/* Add the TaskList component */}
       <TaskList />
     </div>
-  )
+  );
 }

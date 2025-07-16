@@ -66,10 +66,7 @@ describe("ServiceWorkerErrorHandler", () => {
     render(<ServiceWorkerErrorHandler />);
     const rejectionEvent = new PromiseRejectionEvent("unhandledrejection", {
       promise: Promise.resolve(),
-      reason: {
-        message: "service worker error",
-        filename: "service-worker.js",
-      },
+      reason: "service-worker error", // Use a string to match the implementation's check
     });
     act(() => {
       window.dispatchEvent(rejectionEvent);

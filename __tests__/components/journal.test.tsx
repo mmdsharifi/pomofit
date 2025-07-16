@@ -4,7 +4,12 @@ import { render, screen, fireEvent, act } from "../../test/test-utils";
 import { JournalEditor } from "@/components/journal/journal-editor";
 import type { JournalEntry } from "@/app/journal/journal-client";
 
-jest.useFakeTimers();
+beforeAll(() => {
+  jest.useFakeTimers();
+});
+afterAll(() => {
+  jest.useRealTimers();
+});
 
 describe("JournalEditor", () => {
   it("renders the journal editor with default title", () => {
@@ -41,7 +46,6 @@ describe("JournalEditor", () => {
       jest.advanceTimersByTime(700);
     });
     expect(onSave).toHaveBeenCalled();
-    jest.useRealTimers();
   });
 
   it("renders with a selectedEntry and allows editing", () => {

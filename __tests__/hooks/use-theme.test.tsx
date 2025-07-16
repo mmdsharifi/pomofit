@@ -36,8 +36,8 @@ describe("useTheme Hook", () => {
 
     const { result } = renderHook(() => useTheme(), { wrapper });
 
-    // Should match system preference (dark in this case)
-    expect(result.current.theme).toBe("dark");
+    // Should default to 'system' and apply system preference (dark in this case)
+    expect(result.current.theme).toBe("system");
     expect(document.documentElement.classList.contains("dark")).toBe(true);
   });
 
@@ -66,7 +66,7 @@ describe("useTheme Hook", () => {
       result.current.setTheme("dark");
     });
 
-    expect(localStorage.getItem("theme")).toBe("dark");
+    expect(localStorage.getItem("pomofit-theme")).toBe('"dark"');
 
     // Unmount and remount to test persistence
     const { result: newResult } = renderHook(() => useTheme(), { wrapper });

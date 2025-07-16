@@ -78,7 +78,10 @@ export default function WorkoutDisplay({
                 renderer="svg"
                 background="transparent"
                 style={{ height: "220px", width: "220px" }}
-                // onError={handleLottieError} // Remove this line, Player does not support onError
+                /*
+                  Note: The Lottie Player component does not support an onError prop.
+                  The test for 'Animation unavailable' should mock the fallback UI directly.
+                */
               />
             )}
           </div>

@@ -249,6 +249,10 @@ function TimerProviderInner({
   // Flag to track if we're in a timer completion state
   const isCompletingTimerRef = useRef(false);
 
+  // Timer refs
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+
   // Initialize pomodorosCompleted by counting actual sessions from history
   const [pomodorosCompleted, setPomodorosCompleted] = useState(() => {
     if (typeof window !== "undefined") {
@@ -283,60 +287,32 @@ function TimerProviderInner({
     }
   }, [mode, getTotalTime]);
 
-  // Timer logic - use a ref for the interval to avoid dependency issues
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const lastUpdateRef = useRef<number>(Date.now());
-  const animationFrameRef = useRef<number | null>(null);
-
+  // Timer logic effect
   useEffect(() => {
-    // Clear any existing interval and animation frame
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
+    // Clear any existing timers
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
     }
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
 
     if (isRunning && timeLeft > 0) {
-      // Use a more efficient timer that respects background tabs
+      // Use a more efficient timer that updates every second
       const updateTimer = () => {
-        const now = Date.now();
-        const timeDiff = now - lastUpdateRef.current;
-
-        // Only update if at least 900ms have passed (allows for slight delays)
-        if (timeDiff >= 900) {
-          setTimeLeft((prevTime) => {
-            const newTime = prevTime - Math.floor(timeDiff / 1000);
-            return newTime > 0 ? newTime : 0;
-          });
-          lastUpdateRef.current = now;
-        }
+        setTimeLeft((prevTime) => {
+          const newTime = prevTime - 1;
+          return newTime > 0 ? newTime : 0;
+        });
       };
 
-      // Use requestAnimationFrame for better performance when tab is active
-      const tick = () => {
-        updateTimer();
-        if (isRunning && timeLeft > 0) {
-          animationFrameRef.current = requestAnimationFrame(tick);
-        }
-      };
-
-      // Start the animation frame loop
-      animationFrameRef.current = requestAnimationFrame(tick);
-
-      // Fallback to setInterval for background tabs or if requestAnimationFrame fails
-      intervalRef.current = setInterval(() => {
-        updateTimer();
-      }, 1000);
+      // Use setInterval for consistent 1-second updates
+      intervalRef.current = setInterval(updateTimer, 1000);
 
       // Cleanup function
       return () => {
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current);
-          animationFrameRef.current = null;
-        }
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
           intervalRef.current = null;

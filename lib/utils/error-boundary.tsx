@@ -1,4 +1,11 @@
+"use client";
+
 import React, { Component, ErrorInfo, ReactNode } from "react";
+
+// Development-only error boundary utilities - not for production use
+if (process.env.NODE_ENV === "production") {
+  throw new Error("Error boundary utilities are not available in production");
+}
 
 interface Props {
   children: ReactNode;

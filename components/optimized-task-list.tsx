@@ -21,6 +21,11 @@ import { useMemoizedCallback } from "@/lib/hooks/use-memoized-callback";
 import { AnimatePresence, motion } from "framer-motion";
 import type { Task } from "@/types/task";
 
+// Development-only component - not for production use
+if (process.env.NODE_ENV === "production") {
+  throw new Error("OptimizedTaskList is not available in production");
+}
+
 interface OptimizedTaskListProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;

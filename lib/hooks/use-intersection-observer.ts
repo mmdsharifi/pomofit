@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 
+// Development-only hooks - not for production use
+if (process.env.NODE_ENV === "production") {
+  throw new Error(
+    "Intersection observer hooks are not available in production"
+  );
+}
+
 interface UseIntersectionObserverOptions {
   root?: Element | null;
   rootMargin?: string;

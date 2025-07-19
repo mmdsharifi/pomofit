@@ -1,4 +1,9 @@
-import { useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+
+// Development-only hooks - not for production use
+if (process.env.NODE_ENV === "production") {
+  throw new Error("Debounce hooks are not available in production");
+}
 
 /**
  * Custom hook for debouncing function calls

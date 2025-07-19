@@ -1,5 +1,10 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 
+// Development-only hooks - not for production use
+if (process.env.NODE_ENV === "production") {
+  throw new Error("Virtual scroll hooks are not available in production");
+}
+
 interface VirtualScrollOptions {
   itemHeight: number;
   containerHeight: number;

@@ -285,6 +285,7 @@ function TimerProviderInner({
 
   // Timer logic - use a ref for the interval to avoid dependency issues
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastUpdateRef = useRef<number>(Date.now());
 
   useEffect(() => {
     // Clear any existing interval
@@ -294,19 +295,51 @@ function TimerProviderInner({
     }
 
     if (isRunning && timeLeft > 0) {
-      intervalRef.current = setInterval(() => {
-        setTimeLeft((prevTime) => prevTime - 1);
-      }, 1000);
-    }
+      // Use a more efficient timer that respects background tabs
+      const updateTimer = () => {
+        const now = Date.now();
+        const timeDiff = now - lastUpdateRef.current;
 
-    // Cleanup function
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-  }, [isRunning]);
+        // Only update if at least 900ms have passed (allows for slight delays)
+        if (timeDiff >= 900) {
+          setTimeLeft((prevTime) => {
+            const newTime = prevTime - Math.floor(timeDiff / 1000);
+            return newTime > 0 ? newTime : 0;
+          });
+          lastUpdateRef.current = now;
+        }
+      };
+
+      // Use requestAnimationFrame for better performance when tab is active
+      let animationFrameId: number;
+
+      const tick = () => {
+        updateTimer();
+        if (isRunning && timeLeft > 0) {
+          animationFrameId = requestAnimationFrame(tick);
+        }
+      };
+
+      // Start the animation frame loop
+      animationFrameId = requestAnimationFrame(tick);
+
+      // Fallback to setInterval for background tabs or if requestAnimationFrame fails
+      intervalRef.current = setInterval(() => {
+        updateTimer();
+      }, 1000);
+
+      // Cleanup function
+      return () => {
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
+        }
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+      };
+    }
+  }, [isRunning, timeLeft]);
 
   // Add this new useEffect after the timer logic effect
   useEffect(() => {
@@ -443,21 +476,6 @@ function TimerProviderInner({
     incrementTaskPomodoros,
   ]);
 
-  // Update document title
-  useEffect(() => {
-    const originalTitle = document.title;
-
-    if (mode === "pomodoro") {
-      document.title = `Focus - ${formatTime(timeLeft)}`;
-    } else {
-      document.title = `Rest - ${formatTime(timeLeft)}`;
-    }
-
-    return () => {
-      document.title = originalTitle;
-    };
-  }, [mode, timeLeft]);
-
   // Format time as MM:SS
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -466,6 +484,40 @@ function TimerProviderInner({
       .toString()
       .padStart(2, "0")}`;
   };
+
+  // Update document title
+  useEffect(() => {
+    const originalTitle = document.title;
+
+    // Only update title if the page is visible to reduce background processing
+    if (document.visibilityState === "visible") {
+      if (mode === "pomodoro") {
+        document.title = `Focus - ${formatTime(timeLeft)}`;
+      } else {
+        document.title = `Rest - ${formatTime(timeLeft)}`;
+      }
+    }
+
+    return () => {
+      document.title = originalTitle;
+    };
+  }, [mode, timeLeft, formatTime]);
+
+  // Pause timer when tab becomes hidden to save energy
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && isRunning) {
+        // Optionally pause timer when tab is hidden
+        // Uncomment the next line if you want to pause timer in background
+        // setIsRunning(false);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [isRunning]);
 
   // Calculate progress percentage
   const progressPercentage = (1 - timeLeft / getTotalTime(mode)) * 100;

@@ -261,4 +261,21 @@ describe("useTimer Hook", () => {
       expect(result.current.isRunning).toBe(true);
     });
   });
+
+  it("should format time correctly", () => {
+    const { result } = renderHook(() => useTimer(), {
+      wrapper: ({ children }) => (
+        <AuthProvider>
+          <TaskProvider>
+            <TimerProvider>{children}</TimerProvider>
+          </TaskProvider>
+        </AuthProvider>
+      ),
+    });
+
+    expect(result.current.formatTime(65)).toBe("01:05");
+    expect(result.current.formatTime(125)).toBe("02:05");
+    expect(result.current.formatTime(0)).toBe("00:00");
+    expect(result.current.formatTime(3600)).toBe("60:00");
+  });
 });

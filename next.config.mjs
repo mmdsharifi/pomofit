@@ -3,6 +3,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  env: {
+    NEXT_PUBLIC_APP_VERSION: process.env.npm_package_version || "0.1.0",
+  },
   // Add headers for PWA
   async headers() {
     return [

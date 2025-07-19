@@ -1,0 +1,128 @@
+name: Version and Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  version-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test -- --passWithNoTests --silent
+
+      - name: Determine version bump type
+        id: version-bump
+        run: |
+          # Get commit messages since last tag
+          COMMITS=$(git log --oneline $(git describe --tags --abbrev=0 2>/dev/null || git rev-list --max-parents=0 HEAD)..HEAD)
+
+          # Check for breaking changes (major version)
+          if echo "$COMMITS" | grep -q "BREAKING CHANGE\|!:"; then
+            echo "bump=major" >> $GITHUB_OUTPUT
+          # Check for new features (minor version)
+          elif echo "$COMMITS" | grep -q "feat:"; then
+            echo "bump=minor" >> $GITHUB_OUTPUT
+          # Default to patch version
+          else
+            echo "bump=patch" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Bump version
+        id: bump-version
+        if: github.ref == 'refs/heads/main'
+        run: |
+          # Get current version
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+
+          # Bump version based on commit messages
+          BUMP_TYPE=${{ steps.version-bump.outputs.bump }}
+
+          # Parse current version
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+
+          case $BUMP_TYPE in
+            "major")
+              NEW_MAJOR=$((MAJOR + 1))
+              NEW_VERSION="$NEW_MAJOR.0.0"
+              ;;
+            "minor")
+              NEW_MINOR=$((MINOR + 1))
+              NEW_VERSION="$MAJOR.$NEW_MINOR.0"
+              ;;
+            "patch")
+              NEW_PATCH=$((PATCH + 1))
+              NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
+              ;;
+          esac
+
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+          # Update package.json
+          npm version $NEW_VERSION --no-git-tag-version
+
+          # Update version in lib/version.ts
+          sed -i "s/return process.env.npm_package_version || '.*'/return process.env.npm_package_version || '$NEW_VERSION'/" lib/version.ts
+
+      - name: Build application
+        run: npm run build
+
+      - name: Create Release
+        if: github.ref == 'refs/heads/main'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.bump-version.outputs.new_version }}
+          release_name: Release v${{ steps.bump-version.outputs.new_version }}
+          body: |
+            ## What's Changed
+
+            This release includes:
+            - Version bump from ${{ steps.bump-version.outputs.current_version }} to ${{ steps.bump-version.outputs.new_version }}
+            - Automatic semantic versioning
+            - Build optimizations
+
+            ## Version Information
+            - **Version**: ${{ steps.bump-version.outputs.new_version }}
+            - **Build Date**: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+            - **Commit**: ${{ github.sha }}
+          draft: false
+          prerelease: false
+
+      - name: Commit version changes
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add package.json package-lock.json lib/version.ts
+          git commit -m "chore: bump version to ${{ steps.bump-version.outputs.new_version }} [skip ci]"
+          git push
+
+      - name: Deploy to Vercel
+        if: github.ref == 'refs/heads/main'
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: "--prod"

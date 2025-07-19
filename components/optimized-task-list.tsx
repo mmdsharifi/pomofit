@@ -1,385 +1,214 @@
 "use client";
 
-import React, {
-  useEffect,
-  useRef,
-  useState,
-  useCallback,
-  useMemo,
-} from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, ChevronDown, ChevronRight, Search, X } from "lucide-react";
-import { TaskItem } from "./task-item";
+import React, { useState, useMemo, useCallback } from "react";
+import { Task } from "@/types/task";
 import { useTasks } from "@/lib/task-context";
-import { useTimer } from "@/lib/timer-context";
-import { useMobile } from "@/hooks/use-mobile";
-import { useVirtualScroll } from "@/lib/hooks/use-virtual-scroll";
 import { useDebounce } from "@/lib/hooks/use-debounce";
-import { useMemoizedCallback } from "@/lib/hooks/use-memoized-callback";
-import { AnimatePresence, motion } from "framer-motion";
-import type { Task } from "@/types/task";
-
-// Development-only component - not for production use
-if (process.env.NODE_ENV === "production") {
-  throw new Error("OptimizedTaskList is not available in production");
-}
+import { useVirtualScroll } from "@/lib/hooks/use-virtual-scroll";
+import { useIntersectionObserver } from "@/lib/hooks/use-intersection-observer";
+import { TaskItem } from "./task-item";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Card } from "./ui/card";
+import { Badge } from "./ui/badge";
+import { Search, Plus, Filter } from "lucide-react";
 
 interface OptimizedTaskListProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  className?: string;
+  showCompleted?: boolean;
+  maxHeight?: number;
 }
 
-const ITEM_HEIGHT = 60; // Approximate height of each task item
-const CONTAINER_HEIGHT = 400; // Height of the scrollable container
-
+/**
+ * Optimized task list component with virtual scrolling and performance optimizations
+ */
 export function OptimizedTaskList({
-  open,
-  onOpenChange,
+  className = "",
+  showCompleted = false,
+  maxHeight = 400,
 }: OptimizedTaskListProps) {
-  const isMobile = useMobile();
-  const [inputValue, setInputValue] = useState("");
-  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
-  const [editingTaskText, setEditingTaskText] = useState("");
-  const [focusedTaskIndex, setFocusedTaskIndex] = useState<number | null>(null);
-  const [isInputFocused, setIsInputFocused] = useState(false);
-  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
-  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-  const [showCompletedTasks, setShowCompletedTasks] = useState(true);
+  const { tasks, addTask, toggleTask, removeTask } = useTasks();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
 
-  const inputRef = useRef<HTMLInputElement>(null);
-  const editInputRef = useRef<HTMLInputElement>(null);
+  // Debounced search term
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  const {
-    tasks,
-    addTask,
-    removeTask,
-    toggleTask,
-    updateTask,
-    setCurrentTaskId,
-    getNextTask,
-  } = useTasks();
-
-  const { toggleTimer } = useTimer();
-
-  // Debounced search input
-  const debouncedSearch = useDebounce(setInputValue, 300);
-
-  // Memoized filtered tasks
+  // Filter and search tasks
   const filteredTasks = useMemo(() => {
-    if (!inputValue.trim()) return tasks;
+    return tasks.filter((task) => {
+      const matchesSearch = task.title
+        .toLowerCase()
+        .includes(debouncedSearchTerm.toLowerCase());
+      const matchesFilter =
+        filter === "all" ||
+        (filter === "active" && !task.completed) ||
+        (filter === "completed" && task.completed);
+      return matchesSearch && matchesFilter;
+    });
+  }, [tasks, debouncedSearchTerm, filter]);
 
-    const normalizedQuery = inputValue.toLowerCase().trim();
-    return tasks.filter((task) =>
-      task.title.toLowerCase().includes(normalizedQuery)
-    );
-  }, [tasks, inputValue]);
-
-  // Separate active and completed tasks
-  const activeTasks = useMemo(
-    () => filteredTasks.filter((task) => !task.completed),
-    [filteredTasks]
+  // Virtual scroll setup
+  const { virtualItems, totalHeight, containerRef } = useVirtualScroll(
+    filteredTasks,
+    {
+      itemHeight: 60,
+      containerHeight: maxHeight,
+      overscan: 5,
+    }
   );
 
-  const completedTasks = useMemo(
-    () => filteredTasks.filter((task) => task.completed),
-    [filteredTasks]
-  );
-
-  // Display tasks (active first, then completed if expanded)
-  const displayTasks = useMemo(
-    () => [
-      ...activeTasks.sort((a, b) => a.order - b.order),
-      ...(showCompletedTasks ? completedTasks : []),
-    ],
-    [activeTasks, completedTasks, showCompletedTasks]
-  );
-
-  // Virtual scroll for active tasks
-  const activeVirtualScroll = useVirtualScroll(activeTasks, {
-    itemHeight: ITEM_HEIGHT,
-    containerHeight: CONTAINER_HEIGHT,
-    overscan: 3,
+  // Intersection observer for infinite scroll (if needed)
+  const [loadMoreRef, isIntersecting] = useIntersectionObserver({
+    threshold: 0.1,
   });
 
-  // Virtual scroll for completed tasks
-  const completedVirtualScroll = useVirtualScroll(completedTasks, {
-    itemHeight: ITEM_HEIGHT,
-    containerHeight: Math.min(completedTasks.length * ITEM_HEIGHT, 200),
-    overscan: 2,
-  });
-
-  // Memoized handlers
-  const handleAddTask = useMemoizedCallback(
-    (title: string) => {
-      if (title.trim()) {
-        addTask(title.trim());
-        setInputValue("");
+  // Memoized callbacks
+  const handleAddTask = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      if (newTaskTitle.trim()) {
+        addTask(newTaskTitle.trim());
+        setNewTaskTitle("");
+        setShowAddForm(false);
       }
     },
-    [addTask]
+    [newTaskTitle, addTask]
   );
 
-  const handleEditTask = useMemoizedCallback((task: Task) => {
-    setEditingTaskId(task.id);
-    setEditingTaskText(task.title);
-  }, []);
-
-  const handlePlayTask = useMemoizedCallback(
-    (taskId: string) => {
-      setCurrentTaskId(taskId);
-      toggleTimer();
-      onOpenChange(false);
+  const handleToggleTask = useCallback(
+    (id: string) => {
+      toggleTask(id);
     },
-    [setCurrentTaskId, toggleTimer, onOpenChange]
+    [toggleTask]
   );
 
-  const handleSaveEdit = useMemoizedCallback(
-    (task: Task) => {
-      if (editingTaskText.trim() && editingTaskText !== task.title) {
-        updateTask(task.id, { title: editingTaskText.trim() });
-      }
-      setEditingTaskId(null);
-      setEditingTaskText("");
+  const handleDeleteTask = useCallback(
+    (id: string) => {
+      removeTask(id);
     },
-    [editingTaskText, updateTask]
+    [removeTask]
   );
-
-  const handleEditKeyDown = useMemoizedCallback(
-    (e: React.KeyboardEvent, task: Task) => {
-      if (e.key === "Enter") {
-        handleSaveEdit(task);
-      } else if (e.key === "Escape") {
-        setEditingTaskId(null);
-        setEditingTaskText("");
-      }
-    },
-    [handleSaveEdit]
-  );
-
-  const handleTaskFocus = useMemoizedCallback((index: number) => {
-    setFocusedTaskIndex(index);
-  }, []);
-
-  // Reset state when modal opens/closes
-  useEffect(() => {
-    if (open) {
-      setFocusedTaskIndex(null);
-      setTimeout(() => {
-        inputRef.current?.focus();
-        setIsInputFocused(true);
-      }, 100);
-    } else {
-      setFocusedTaskIndex(null);
-      setIsInputFocused(false);
-      setInputValue("");
-    }
-  }, [open]);
-
-  // Focus edit input when editing
-  useEffect(() => {
-    if (editingTaskId && editInputRef.current) {
-      editInputRef.current.focus();
-    }
-  }, [editingTaskId]);
-
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!open) return;
-
-      if (e.key === "Escape") {
-        onOpenChange(false);
-      } else if (e.key === "Enter" && isInputFocused) {
-        e.preventDefault();
-        handleAddTask(inputValue);
-      } else if (e.key === "ArrowDown" && !isInputFocused) {
-        e.preventDefault();
-        setFocusedTaskIndex((prev) =>
-          prev === null ? 0 : Math.min(prev + 1, displayTasks.length - 1)
-        );
-      } else if (e.key === "ArrowUp" && !isInputFocused) {
-        e.preventDefault();
-        setFocusedTaskIndex((prev) =>
-          prev === null ? displayTasks.length - 1 : Math.max(prev - 1, 0)
-        );
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [
-    open,
-    isInputFocused,
-    inputValue,
-    displayTasks.length,
-    handleAddTask,
-    onOpenChange,
-  ]);
-
-  if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-background rounded-lg shadow-lg border">
-          <div className="p-4 border-b">
-            <div className="flex items-center gap-2">
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <Input
-                ref={inputRef}
-                placeholder="Add a task or search..."
-                value={inputValue}
-                onChange={(e) => debouncedSearch(e.target.value)}
-                className="flex-1"
-              />
-              {inputValue && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => debouncedSearch("")}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          </div>
+    <Card className={`p-4 ${className}`}>
+      <div className="space-y-4">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Tasks</h2>
+          <Button
+            onClick={() => setShowAddForm(!showAddForm)}
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add Task
+          </Button>
+        </div>
 
-          <ScrollArea className="h-96">
-            <div className="p-4 space-y-2">
-              {/* Active Tasks */}
+        {/* Search and Filter */}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              placeholder="Search tasks..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              setFilter(
+                filter === "all"
+                  ? "active"
+                  : filter === "active"
+                  ? "completed"
+                  : "all"
+              )
+            }
+            className="flex items-center gap-2"
+          >
+            <Filter className="w-4 h-4" />
+            {filter}
+          </Button>
+        </div>
+
+        {/* Add Task Form */}
+        {showAddForm && (
+          <form onSubmit={handleAddTask} className="flex gap-2">
+            <Input
+              placeholder="Enter task title..."
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              className="flex-1"
+            />
+            <Button type="submit" size="sm">
+              Add
+            </Button>
+          </form>
+        )}
+
+        {/* Task List */}
+        <div
+          ref={containerRef as React.RefObject<HTMLDivElement>}
+          className="border rounded-lg overflow-auto"
+          style={{ height: maxHeight }}
+        >
+          <div style={{ height: totalHeight, position: "relative" }}>
+            {virtualItems.map((task, index) => (
               <div
+                key={task.id}
                 style={{
-                  height: `${activeVirtualScroll.totalHeight}px`,
-                  position: "relative",
+                  position: "absolute",
+                  top: (index + 1) * 60,
+                  width: "100%",
+                  height: 60,
                 }}
               >
-                {activeVirtualScroll.virtualItems.map(
-                  ({ data: task, offsetTop, index }) => (
-                    <div
-                      key={task.id}
-                      style={{
-                        position: "absolute",
-                        top: offsetTop,
-                        width: "100%",
-                        height: ITEM_HEIGHT,
-                      }}
-                    >
-                      {editingTaskId === task.id ? (
-                        <div className="flex items-center gap-2 p-3 rounded-lg border bg-card">
-                          <Input
-                            ref={editInputRef}
-                            value={editingTaskText}
-                            onChange={(e) => setEditingTaskText(e.target.value)}
-                            onKeyDown={(e) => handleEditKeyDown(e, task)}
-                            onBlur={() => handleSaveEdit(task)}
-                            className="flex-1"
-                          />
-                        </div>
-                      ) : (
-                        <TaskItem
-                          task={task}
-                          onToggle={() => toggleTask(task.id)}
-                          onDelete={() => {
-                            setTaskToDelete(task);
-                            setShowDeleteConfirmation(true);
-                          }}
-                          onPlay={() => handlePlayTask(task.id)}
-                          onEdit={() => handleEditTask(task)}
-                          isFocused={focusedTaskIndex === index}
-                          searchQuery={inputValue}
-                        />
-                      )}
-                    </div>
-                  )
-                )}
+                <TaskItem
+                  task={task}
+                  onToggle={() => handleToggleTask(task.id)}
+                  onDelete={() => handleDeleteTask(task.id)}
+                  onPlay={() => {
+                    // Handle play functionality - could be implemented later
+                    console.log("Play task:", task.id);
+                  }}
+                  onEdit={() => {
+                    // Handle edit functionality - could be implemented later
+                    console.log("Edit task:", task.id);
+                  }}
+                />
               </div>
-
-              {/* Completed Tasks */}
-              {completedTasks.length > 0 && (
-                <div className="mt-4">
-                  <Button
-                    variant="ghost"
-                    className="w-full flex justify-between items-center py-2 h-auto"
-                    onClick={() => setShowCompletedTasks(!showCompletedTasks)}
-                  >
-                    <span className="font-medium">
-                      Done tasks ({completedTasks.length})
-                    </span>
-                    {showCompletedTasks ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4" />
-                    )}
-                  </Button>
-
-                  {showCompletedTasks && (
-                    <div
-                      style={{
-                        height: `${completedVirtualScroll.totalHeight}px`,
-                        position: "relative",
-                      }}
-                    >
-                      {completedVirtualScroll.virtualItems.map(
-                        ({ data: task, offsetTop, index }) => (
-                          <div
-                            key={task.id}
-                            style={{
-                              position: "absolute",
-                              top: offsetTop,
-                              width: "100%",
-                              height: ITEM_HEIGHT,
-                            }}
-                          >
-                            <TaskItem
-                              task={task}
-                              onToggle={() => toggleTask(task.id)}
-                              onDelete={() => {
-                                setTaskToDelete(task);
-                                setShowDeleteConfirmation(true);
-                              }}
-                              onPlay={() => handlePlayTask(task.id)}
-                              onEdit={() => handleEditTask(task)}
-                              isFocused={
-                                focusedTaskIndex === activeTasks.length + index
-                              }
-                              searchQuery={inputValue}
-                            />
-                          </div>
-                        )
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-
-          <div className="p-4 border-t">
-            <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground flex-wrap">
-              <span>
-                <code className="rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-xs">
-                  Esc
-                </code>{" "}
-                to close
-              </span>
-              <span>
-                <code className="rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-xs">
-                  Enter
-                </code>
-                {focusedTaskIndex !== null ? "to start session" : "to add task"}
-              </span>
-              <span>
-                <code className="rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-xs">
-                  ↑↓
-                </code>{" "}
-                to navigate
-              </span>
-            </div>
+            ))}
           </div>
         </div>
+
+        {/* Stats */}
+        <div className="flex justify-between text-sm text-gray-500">
+          <span>
+            {filteredTasks.length} of {tasks.length} tasks
+          </span>
+          <div className="flex gap-2">
+            <Badge variant="secondary">
+              {tasks.filter((t) => !t.completed).length} active
+            </Badge>
+            <Badge variant="outline">
+              {tasks.filter((t) => t.completed).length} completed
+            </Badge>
+          </div>
+        </div>
+
+        {/* Load More Trigger */}
+        <div
+          ref={loadMoreRef as React.RefObject<HTMLDivElement>}
+          className="h-4"
+        />
       </div>
-    </div>
+    </Card>
   );
 }

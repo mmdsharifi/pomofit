@@ -1,10 +1,5 @@
 import { useCallback, useMemo, useRef } from "react";
 
-// Development-only hooks - not for production use
-if (process.env.NODE_ENV === "production") {
-  throw new Error("Memoized callback hooks are not available in production");
-}
-
 /**
  * Custom hook for creating memoized callbacks with deep comparison
  * @param callback - The function to memoize

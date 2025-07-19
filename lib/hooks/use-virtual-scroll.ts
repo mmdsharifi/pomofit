@@ -1,9 +1,4 @@
-import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-
-// Development-only hooks - not for production use
-if (process.env.NODE_ENV === "production") {
-  throw new Error("Virtual scroll hooks are not available in production");
-}
+import React, { useState, useEffect, useRef, useCallback } from "react";
 
 interface VirtualScrollOptions {
   itemHeight: number;
@@ -12,14 +7,11 @@ interface VirtualScrollOptions {
 }
 
 interface VirtualScrollReturn<T> {
-  virtualItems: Array<{
-    index: number;
-    data: T;
-    offsetTop: number;
-  }>;
+  virtualItems: T[];
   totalHeight: number;
   startIndex: number;
   endIndex: number;
+  scrollTop: number;
   containerRef: React.RefObject<HTMLDivElement>;
 }
 
@@ -27,7 +19,7 @@ interface VirtualScrollReturn<T> {
  * Custom hook for virtual scrolling
  * @param items - Array of items to virtualize
  * @param options - Virtual scroll options
- * @returns Virtual scroll data and container ref
+ * @returns Virtual scroll data and refs
  */
 export function useVirtualScroll<T>(
   items: T[],
@@ -37,56 +29,35 @@ export function useVirtualScroll<T>(
   const [scrollTop, setScrollTop] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Calculate virtual scroll data
-  const virtualData = useMemo(() => {
-    const startIndex = Math.max(
-      0,
-      Math.floor(scrollTop / itemHeight) - overscan
-    );
-    const endIndex = Math.min(
-      items.length - 1,
-      Math.ceil((scrollTop + containerHeight) / itemHeight) + overscan
-    );
+  const totalHeight = items.length * itemHeight;
+  const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
+  const endIndex = Math.min(
+    items.length,
+    Math.ceil((scrollTop + containerHeight) / itemHeight) + overscan
+  );
 
-    const virtualItems = [];
-    for (let i = startIndex; i <= endIndex; i++) {
-      if (items[i]) {
-        virtualItems.push({
-          index: i,
-          data: items[i],
-          offsetTop: i * itemHeight,
-        });
-      }
-    }
+  const virtualItems = items.slice(startIndex, endIndex);
 
-    return {
-      virtualItems,
-      totalHeight: items.length * itemHeight,
-      startIndex,
-      endIndex,
-    };
-  }, [items, scrollTop, itemHeight, containerHeight, overscan]);
-
-  // Handle scroll events
   const handleScroll = useCallback((event: React.UIEvent<HTMLDivElement>) => {
     setScrollTop(event.currentTarget.scrollTop);
   }, []);
 
-  // Add scroll listener
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
-
-    const handleScrollEvent = () => {
-      setScrollTop(container.scrollTop);
-    };
-
-    container.addEventListener("scroll", handleScrollEvent);
-    return () => container.removeEventListener("scroll", handleScrollEvent);
-  }, []);
+    if (container) {
+      container.addEventListener("scroll", handleScroll as any);
+      return () => {
+        container.removeEventListener("scroll", handleScroll as any);
+      };
+    }
+  }, [handleScroll]);
 
   return {
-    ...virtualData,
+    virtualItems,
+    totalHeight,
+    startIndex,
+    endIndex,
+    scrollTop,
     containerRef,
   };
 }

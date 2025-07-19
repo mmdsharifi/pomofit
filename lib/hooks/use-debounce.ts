@@ -1,60 +1,49 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 
-// Development-only hooks - not for production use
-if (process.env.NODE_ENV === "production") {
-  throw new Error("Debounce hooks are not available in production");
+/**
+ * Custom hook for debouncing values
+ * @param value - The value to debounce
+ * @param delay - The delay in milliseconds
+ * @returns The debounced value
+ */
+export function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = React.useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
 }
 
 /**
- * Custom hook for debouncing function calls
- * @param callback - The function to debounce
- * @param delay - The delay in milliseconds
- * @returns A debounced version of the callback
+ * Custom hook for throttling values
+ * @param value - The value to throttle
+ * @param limit - The throttle limit in milliseconds
+ * @returns The throttled value
  */
-export function useDebounce<T extends (...args: any[]) => any>(
-  callback: T,
-  delay: number
-): T {
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+export function useThrottle<T>(value: T, limit: number): T {
+  const [throttledValue, setThrottledValue] = React.useState<T>(value);
+  const lastRan = useRef<number>(Date.now());
 
-  const debouncedCallback = useCallback(
-    (...args: Parameters<T>) => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (Date.now() - lastRan.current >= limit) {
+        setThrottledValue(value);
+        lastRan.current = Date.now();
       }
+    }, limit - (Date.now() - lastRan.current));
 
-      timeoutRef.current = setTimeout(() => {
-        callback(...args);
-      }, delay);
-    },
-    [callback, delay]
-  ) as T;
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, limit]);
 
-  return debouncedCallback;
-}
-
-/**
- * Custom hook for throttling function calls
- * @param callback - The function to throttle
- * @param delay - The delay in milliseconds
- * @returns A throttled version of the callback
- */
-export function useThrottle<T extends (...args: any[]) => any>(
-  callback: T,
-  delay: number
-): T {
-  const lastCallRef = useRef(0);
-
-  const throttledCallback = useCallback(
-    (...args: Parameters<T>) => {
-      const now = Date.now();
-      if (now - lastCallRef.current >= delay) {
-        callback(...args);
-        lastCallRef.current = now;
-      }
-    },
-    [callback, delay]
-  ) as T;
-
-  return throttledCallback;
+  return throttledValue;
 }

@@ -1,55 +1,34 @@
-import { useEffect, useRef, useState, useCallback } from "react";
-
-// Development-only hooks - not for production use
-if (process.env.NODE_ENV === "production") {
-  throw new Error(
-    "Intersection observer hooks are not available in production"
-  );
-}
-
-interface UseIntersectionObserverOptions {
-  root?: Element | null;
-  rootMargin?: string;
-  threshold?: number | number[];
-}
-
-interface UseIntersectionObserverReturn {
-  ref: React.RefObject<Element>;
-  isIntersecting: boolean;
-  entry: IntersectionObserverEntry | null;
-}
+import { useEffect, useRef, useState } from "react";
 
 /**
  * Custom hook for intersection observer
  * @param options - Intersection observer options
- * @returns Object with ref, isIntersecting state, and entry
+ * @returns [ref, isIntersecting, entry]
  */
 export function useIntersectionObserver(
-  options: UseIntersectionObserverOptions = {}
-): UseIntersectionObserverReturn {
+  options: IntersectionObserverInit = {}
+): [React.RefObject<Element>, boolean, IntersectionObserverEntry | null] {
   const [isIntersecting, setIsIntersecting] = useState(false);
   const [entry, setEntry] = useState<IntersectionObserverEntry | null>(null);
   const ref = useRef<Element>(null);
-
-  const callback = useCallback((entries: IntersectionObserverEntry[]) => {
-    const [entry] = entries;
-    setIsIntersecting(entry.isIntersecting);
-    setEntry(entry);
-  }, []);
 
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
 
-    const observer = new IntersectionObserver(callback, options);
+    const observer = new IntersectionObserver(([entry]) => {
+      setIsIntersecting(entry.isIntersecting);
+      setEntry(entry);
+    }, options);
+
     observer.observe(element);
 
     return () => {
       observer.unobserve(element);
     };
-  }, [callback, options]);
+  }, [options]);
 
-  return { ref, isIntersecting, entry };
+  return [ref, isIntersecting, entry];
 }
 
 /**
@@ -60,9 +39,9 @@ export function useIntersectionObserver(
  */
 export function useInfiniteScroll(
   callback: () => void,
-  options: UseIntersectionObserverOptions = {}
+  options: IntersectionObserverInit = {}
 ) {
-  const { ref, isIntersecting } = useIntersectionObserver(options);
+  const [ref, isIntersecting, entry] = useIntersectionObserver(options);
 
   useEffect(() => {
     if (isIntersecting) {

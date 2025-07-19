@@ -3,12 +3,6 @@
  */
 
 // Performance monitoring utilities
-// Development-only utilities - not for production use
-
-if (process.env.NODE_ENV === "production") {
-  throw new Error("Performance utilities are not available in production");
-}
-
 export class PerformanceMonitor {
   private static instance: PerformanceMonitor;
   private metrics: Map<string, number[]> = new Map();

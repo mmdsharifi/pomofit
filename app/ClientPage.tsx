@@ -54,6 +54,9 @@ function ClientContent() {
     setShowGoalReachedModal,
     settings,
     toggleTimer,
+    mode,
+    formatTime,
+    timeLeft,
   } = useTimer();
   const { tasks, getNextTask, setCurrentTaskId } = useTasks();
   const { setOpen } = useTaskList();
@@ -110,13 +113,20 @@ function ClientContent() {
           className="w-full max-w-7xl"
         >
           <div className="w-full flex items-center justify-between p-2">
-            <h1
-              className="text-xs font-bold cursor-pointer"
-              style={{ fontSize: "14px" }}
-              onClick={() => setActiveTab("timer")}
-            >
-              Pomo<span className="text-primary">Fit</span>
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1
+                className="text-xs font-bold cursor-pointer"
+                style={{ fontSize: "14px" }}
+                onClick={() => setActiveTab("timer")}
+              >
+                Pomo<span className="text-primary">Fit</span>
+              </h1>
+              {activeTab !== "timer" && (
+                <span className="text-xs text-muted-foreground font-mono">
+                  {formatTime(timeLeft)} {mode === "pomodoro" ? "🎯" : "🏃‍♂️"}
+                </span>
+              )}
+            </div>
             <div className="flex items-center space-x-2">
               <TabsList className="h-8 bg-transparent">
                 <TabsTrigger

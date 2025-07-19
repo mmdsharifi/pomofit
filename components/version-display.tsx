@@ -13,9 +13,15 @@ export default function VersionDisplay() {
 
   useEffect(() => {
     // Get version info on component mount
-    const info = getVersionInfo();
-    setVersionInfo(info);
-    setIsLoading(false);
+    try {
+      const info = getVersionInfo();
+      setVersionInfo(info);
+    } catch (error) {
+      console.error("Error getting version info:", error);
+      setVersionInfo(null);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   if (isLoading) {
@@ -51,7 +57,10 @@ export default function VersionDisplay() {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Package className="h-4 w-4 text-muted-foreground" />
+              <Package
+                className="h-4 w-4 text-muted-foreground"
+                data-testid="package-icon"
+              />
               <span className="text-sm font-medium text-muted-foreground">
                 Version Information
               </span>
@@ -65,12 +74,12 @@ export default function VersionDisplay() {
 
           <div className="space-y-2 text-xs text-muted-foreground">
             <div className="flex items-center gap-2">
-              <Calendar className="h-3 w-3" />
+              <Calendar className="h-3 w-3" data-testid="calendar-icon" />
               <span>Build Date: {buildDate}</span>
             </div>
 
             <div className="flex items-center gap-2">
-              <GitCommit className="h-3 w-3" />
+              <GitCommit className="h-3 w-3" data-testid="git-commit-icon" />
               <span>Commit: {versionInfo.commitHash.substring(0, 8)}</span>
             </div>
 

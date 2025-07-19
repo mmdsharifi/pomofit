@@ -13,6 +13,7 @@
 - 🛡️ **PWA Support**: Installable, offline-capable, and mobile-friendly.
 - 🔒 **Authentication**: Secure login with Supabase.
 - 🧪 **Comprehensive Testing**: Unit, integration, and E2E tests.
+- 🚀 **High Performance**: 94/100 Lighthouse score with optimized loading.
 
 ---
 
@@ -49,6 +50,27 @@ npm start
 
 ---
 
+## Performance
+
+Pomofit achieves excellent performance scores:
+
+- **Overall Lighthouse Score**: 94/100 🟢
+- **Performance**: 90/100 🟢
+- **Accessibility**: 95/100 🟢
+- **Best Practices**: 95/100 🟢
+- **SEO**: 95/100 🟢
+
+### Key Metrics
+
+- **LCP**: 800ms (excellent)
+- **CLS**: 0.000 (perfect)
+- **Bundle Size**: 102.47KB total
+- **Load Time**: 975ms
+
+See [docs/guides/PERFORMANCE_OPTIMIZATIONS.md](docs/guides/PERFORMANCE_OPTIMIZATIONS.md) for detailed optimization information.
+
+---
+
 ## Testing
 
 Pomofit uses **Jest** and **React Testing Library** for unit/integration tests, and **Cypress** for end-to-end tests.
@@ -58,18 +80,39 @@ Pomofit uses **Jest** and **React Testing Library** for unit/integration tests, 
 - Coverage: `npm run test:coverage`
 - E2E: `npm run e2e`
 
-See [TESTING.md](./TESTING.md) for details.
+See [docs/testing/TESTING.md](docs/testing/TESTING.md) for details.
 
 ---
 
 ## Project Structure
 
-- `app/` – Next.js app directory (pages, layouts, API routes)
-- `components/` – Reusable UI and feature components
-- `lib/` – Contexts, hooks, utilities, and Supabase integration
-- `public/` – Static assets, icons, manifest, service worker
-- `__tests__/` – Unit, integration, and component tests
-- `cypress/` – E2E tests
+```
+pomofit/
+├── app/                    # Next.js app directory (pages, layouts, API routes)
+├── components/             # Reusable UI and feature components
+├── lib/                    # Contexts, hooks, utilities, and Supabase integration
+├── public/                 # Static assets, icons, manifest, service worker
+├── __tests__/              # Unit, integration, and component tests
+├── cypress/                # E2E tests
+├── docs/                   # 📚 Project documentation
+│   ├── guides/             # Feature guides and optimization docs
+│   ├── testing/            # Testing documentation
+│   └── performance-reports/ # Lighthouse audit reports
+├── scripts/                # Performance testing and build scripts
+└── README.md               # This file
+```
+
+---
+
+## Documentation
+
+📚 **Comprehensive documentation** is available in the `docs/` folder:
+
+- **[Documentation Index](docs/README.md)** - Complete documentation overview
+- **[Performance Optimizations](docs/guides/PERFORMANCE_OPTIMIZATIONS.md)** - Detailed optimization guide
+- **[Testing Guide](docs/testing/TESTING.md)** - Testing strategy and best practices
+- **[AI Features](docs/guides/AI_INSIGHTS_GUIDE.md)** - AI-powered features documentation
+- **[Versioning Strategy](docs/guides/VERSIONING.md)** - Release and version management
 
 ---
 
@@ -84,7 +127,8 @@ Pomofit is a Progressive Web App. You can install it on your device and use it o
 1. Fork the repo and create your branch.
 2. Write tests for your feature or fix.
 3. Run `npm test` and `npm run e2e` to ensure all tests pass.
-4. Submit a pull request!
+4. Follow the [testing guidelines](docs/testing/TESTING.md).
+5. Submit a pull request!
 
 ---
 

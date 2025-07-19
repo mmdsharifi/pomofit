@@ -286,12 +286,17 @@ function TimerProviderInner({
   // Timer logic - use a ref for the interval to avoid dependency issues
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastUpdateRef = useRef<number>(Date.now());
+  const animationFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
-    // Clear any existing interval
+    // Clear any existing interval and animation frame
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
+    }
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
     }
 
     if (isRunning && timeLeft > 0) {
@@ -311,17 +316,15 @@ function TimerProviderInner({
       };
 
       // Use requestAnimationFrame for better performance when tab is active
-      let animationFrameId: number;
-
       const tick = () => {
         updateTimer();
         if (isRunning && timeLeft > 0) {
-          animationFrameId = requestAnimationFrame(tick);
+          animationFrameRef.current = requestAnimationFrame(tick);
         }
       };
 
       // Start the animation frame loop
-      animationFrameId = requestAnimationFrame(tick);
+      animationFrameRef.current = requestAnimationFrame(tick);
 
       // Fallback to setInterval for background tabs or if requestAnimationFrame fails
       intervalRef.current = setInterval(() => {
@@ -330,8 +333,9 @@ function TimerProviderInner({
 
       // Cleanup function
       return () => {
-        if (animationFrameId) {
-          cancelAnimationFrame(animationFrameId);
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+          animationFrameRef.current = null;
         }
         if (intervalRef.current) {
           clearInterval(intervalRef.current);

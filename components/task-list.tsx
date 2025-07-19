@@ -3,6 +3,7 @@
 import type React from "react";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useMemoizedCallback } from "@/lib/hooks/use-memoized-callback";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -114,15 +115,18 @@ export function TaskList() {
   } = useTasks();
   const { toggleTimer } = useTimer();
 
-  // Filter tasks based on search query
-  const getFilteredTasks = useCallback((taskList: Task[], query: string) => {
-    if (!query.trim()) return taskList;
+  // Filter tasks based on search query with memoization
+  const getFilteredTasks = useMemoizedCallback(
+    (taskList: Task[], query: string) => {
+      if (!query.trim()) return taskList;
 
-    const normalizedQuery = query.toLowerCase().trim();
-    return taskList.filter((task) =>
-      task.title.toLowerCase().includes(normalizedQuery)
-    );
-  }, []);
+      const normalizedQuery = query.toLowerCase().trim();
+      return taskList.filter((task) =>
+        task.title.toLowerCase().includes(normalizedQuery)
+      );
+    },
+    []
+  );
 
   // Separate active and completed tasks
   const activeTasks = tasks.filter((task) => !task.completed);
@@ -555,7 +559,9 @@ export function TaskList() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
                       onFocus={() => handleTaskFocus(index)}
-                      ref={(el) => (taskRefs.current[index] = el)}
+                      ref={(el) => {
+                        taskRefs.current[index] = el;
+                      }}
                       tabIndex={-1}
                     >
                       {editingTaskId === task.id ? (
@@ -583,7 +589,9 @@ export function TaskList() {
                           }
                           isFocused={focusedTaskIndex === index}
                           searchQuery={inputValue}
-                          ref={(el) => (taskRefs.current[index] = el)}
+                          ref={(el) => {
+                            taskRefs.current[index] = el;
+                          }}
                         />
                       )}
                     </motion.div>
@@ -628,9 +636,9 @@ export function TaskList() {
                                   animate={{ opacity: 1, height: "auto" }}
                                   exit={{ opacity: 0, height: 0 }}
                                   onFocus={() => handleTaskFocus(displayIndex)}
-                                  ref={(el) =>
-                                    (taskRefs.current[displayIndex] = el)
-                                  }
+                                  ref={(el) => {
+                                    taskRefs.current[displayIndex] = el;
+                                  }}
                                   tabIndex={-1}
                                 >
                                   {editingTaskId === task.id ? (
@@ -665,9 +673,9 @@ export function TaskList() {
                                         focusedTaskIndex === displayIndex
                                       }
                                       searchQuery={inputValue}
-                                      ref={(el) =>
-                                        (taskRefs.current[displayIndex] = el)
-                                      }
+                                      ref={(el) => {
+                                        taskRefs.current[displayIndex] = el;
+                                      }}
                                     />
                                   )}
                                 </motion.div>

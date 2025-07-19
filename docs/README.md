@@ -20,6 +20,7 @@ Located in `docs/guides/`
 - **[AI_INSIGHTS_GUIDE.md](guides/AI_INSIGHTS_GUIDE.md)** - AI insights and features documentation
 - **[OPTIMIZATION_SUMMARY.md](guides/OPTIMIZATION_SUMMARY.md)** - Summary of all optimizations implemented
 - **[VERSIONING.md](guides/VERSIONING.md)** - Version management and release strategy
+- **[GITHUB_BOT_SETUP.md](guides/GITHUB_BOT_SETUP.md)** - Automated Lighthouse audit bot setup
 
 ### 🧪 Testing
 
@@ -40,6 +41,7 @@ Located in `docs/testing/`
 - [Testing Guide](testing/TESTING.md) - Testing strategy and best practices
 - [Versioning Strategy](guides/VERSIONING.md) - Release and version management
 - [AI Features](guides/AI_INSIGHTS_GUIDE.md) - AI-powered features documentation
+- [GitHub Bot Setup](guides/GITHUB_BOT_SETUP.md) - Automated performance monitoring
 
 ## 📈 Performance Metrics
 

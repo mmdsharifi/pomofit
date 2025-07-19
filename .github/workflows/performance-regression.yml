@@ -1,0 +1,226 @@
+name: Performance Regression Detection
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  schedule:
+    # Run daily at 2 AM UTC to monitor performance trends
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+jobs:
+  performance-monitoring:
+    name: Performance Monitoring
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch full history for comparison
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: Start application
+        run: |
+          npm start &
+          sleep 30
+
+      - name: Run Performance Analysis
+        id: performance
+        run: |
+          # Run our custom performance analysis
+          node scripts/performance-analysis.js > performance-results.txt
+
+          # Extract scores
+          PERFORMANCE_SCORE=$(grep "Performance:" performance-results.txt | grep -o '[0-9]\+' | head -1)
+          ACCESSIBILITY_SCORE=$(grep "Accessibility:" performance-results.txt | grep -o '[0-9]\+' | head -1)
+          BEST_PRACTICES_SCORE=$(grep "Best Practices:" performance-results.txt | grep -o '[0-9]\+' | head -1)
+          SEO_SCORE=$(grep "SEO:" performance-results.txt | grep -o '[0-9]\+' | head -1)
+          OVERALL_SCORE=$(grep "Overall Score:" performance-results.txt | grep -o '[0-9]\+' | head -1)
+
+          echo "performance_score=$PERFORMANCE_SCORE" >> $GITHUB_OUTPUT
+          echo "accessibility_score=$ACCESSIBILITY_SCORE" >> $GITHUB_OUTPUT
+          echo "best_practices_score=$BEST_PRACTICES_SCORE" >> $GITHUB_OUTPUT
+          echo "seo_score=$SEO_SCORE" >> $GITHUB_OUTPUT
+          echo "overall_score=$OVERALL_SCORE" >> $GITHUB_OUTPUT
+
+          # Save results with timestamp
+          TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
+          COMMIT_HASH=$(git rev-parse --short HEAD)
+
+          echo "## Performance Report - $TIMESTAMP" > "docs/performance-reports/regression-$TIMESTAMP.md"
+          echo "**Commit**: $COMMIT_HASH" >> "docs/performance-reports/regression-$TIMESTAMP.md"
+          echo "**Branch**: ${{ github.ref_name }}" >> "docs/performance-reports/regression-$TIMESTAMP.md"
+          echo "" >> "docs/performance-reports/regression-$TIMESTAMP.md"
+          echo "\`\`\`" >> "docs/performance-reports/regression-$TIMESTAMP.md"
+          cat performance-results.txt >> "docs/performance-reports/regression-$TIMESTAMP.md"
+          echo "\`\`\`" >> "docs/performance-reports/regression-$TIMESTAMP.md"
+
+      - name: Check for Performance Regression
+        run: |
+          # Define thresholds
+          PERFORMANCE_THRESHOLD=85
+          ACCESSIBILITY_THRESHOLD=95
+          BEST_PRACTICES_THRESHOLD=90
+          SEO_THRESHOLD=90
+          OVERALL_THRESHOLD=90
+
+          PERFORMANCE_SCORE=${{ steps.performance.outputs.performance_score }}
+          ACCESSIBILITY_SCORE=${{ steps.performance.outputs.accessibility_score }}
+          BEST_PRACTICES_SCORE=${{ steps.performance.outputs.best_practices_score }}
+          SEO_SCORE=${{ steps.performance.outputs.seo_score }}
+          OVERALL_SCORE=${{ steps.performance.outputs.overall_score }}
+
+          echo "Current Scores:"
+          echo "Performance: $PERFORMANCE_SCORE/$PERFORMANCE_THRESHOLD"
+          echo "Accessibility: $ACCESSIBILITY_SCORE/$ACCESSIBILITY_THRESHOLD"
+          echo "Best Practices: $BEST_PRACTICES_SCORE/$BEST_PRACTICES_THRESHOLD"
+          echo "SEO: $SEO_SCORE/$SEO_THRESHOLD"
+          echo "Overall: $OVERALL_SCORE/$OVERALL_THRESHOLD"
+
+          # Check for regressions
+          REGRESSION_DETECTED=false
+
+          if [ "$PERFORMANCE_SCORE" -lt "$PERFORMANCE_THRESHOLD" ]; then
+            echo "❌ Performance regression detected: $PERFORMANCE_SCORE < $PERFORMANCE_THRESHOLD"
+            REGRESSION_DETECTED=true
+          fi
+
+          if [ "$ACCESSIBILITY_SCORE" -lt "$ACCESSIBILITY_THRESHOLD" ]; then
+            echo "❌ Accessibility regression detected: $ACCESSIBILITY_SCORE < $ACCESSIBILITY_THRESHOLD"
+            REGRESSION_DETECTED=true
+          fi
+
+          if [ "$BEST_PRACTICES_SCORE" -lt "$BEST_PRACTICES_THRESHOLD" ]; then
+            echo "❌ Best Practices regression detected: $BEST_PRACTICES_SCORE < $BEST_PRACTICES_THRESHOLD"
+            REGRESSION_DETECTED=true
+          fi
+
+          if [ "$SEO_SCORE" -lt "$SEO_THRESHOLD" ]; then
+            echo "❌ SEO regression detected: $SEO_SCORE < $SEO_THRESHOLD"
+            REGRESSION_DETECTED=true
+          fi
+
+          if [ "$OVERALL_SCORE" -lt "$OVERALL_THRESHOLD" ]; then
+            echo "❌ Overall score regression detected: $OVERALL_SCORE < $OVERALL_THRESHOLD"
+            REGRESSION_DETECTED=true
+          fi
+
+          if [ "$REGRESSION_DETECTED" = true ]; then
+            echo "Performance regression detected! Please review recent changes."
+            exit 1
+          else
+            echo "✅ All performance metrics meet thresholds"
+          fi
+
+      - name: Create Performance Issue (if regression)
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            // Find the latest regression report
+            const reportsDir = 'docs/performance-reports';
+            const files = fs.readdirSync(reportsDir);
+            const regressionReports = files.filter(f => f.startsWith('regression-') && f.endsWith('.md'));
+
+            if (regressionReports.length > 0) {
+              const latestReport = regressionReports.sort().pop();
+              const reportContent = fs.readFileSync(path.join(reportsDir, latestReport), 'utf8');
+              
+              const issueBody = `## 🚨 Performance Regression Detected
+              
+              A performance regression has been detected in the latest build.
+              
+              **Commit**: ${context.sha}
+              **Branch**: ${context.ref}
+              **Workflow**: ${context.workflow}
+              
+              ${reportContent}
+              
+              ## 🔍 Next Steps
+              
+              1. Review recent changes for performance impacts
+              2. Check bundle size increases
+              3. Analyze Core Web Vitals changes
+              4. Consider reverting problematic changes
+              
+              ## 📊 Performance Thresholds
+              
+              - Performance: ≥ 85
+              - Accessibility: ≥ 95
+              - Best Practices: ≥ 90
+              - SEO: ≥ 90
+              - Overall: ≥ 90
+              
+              ---
+              *This issue was automatically created by GitHub Actions*`;
+              
+              github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `🚨 Performance Regression Detected - ${new Date().toISOString().split('T')[0]}`,
+                body: issueBody,
+                labels: ['performance', 'regression', 'automated'],
+                assignees: ['mmdsharifi'] // Replace with your username
+              });
+            }
+
+      - name: Upload Performance Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-reports-${{ github.run_number }}
+          path: docs/performance-reports/regression-*.md
+          retention-days: 90
+
+      - name: Comment PR with Performance Summary
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const performanceScore = '${{ steps.performance.outputs.performance_score }}';
+            const accessibilityScore = '${{ steps.performance.outputs.accessibility_score }}';
+            const bestPracticesScore = '${{ steps.performance.outputs.best_practices_score }}';
+            const seoScore = '${{ steps.performance.outputs.seo_score }}';
+            const overallScore = '${{ steps.performance.outputs.overall_score }}';
+
+            const comment = `## 📊 Performance Summary
+
+            **Overall Score**: ${overallScore}/100
+
+            | Metric | Score | Status |
+            |-------|-------|--------|
+            | Performance | ${performanceScore}/100 | ${performanceScore >= 85 ? '✅' : '❌'} |
+            | Accessibility | ${accessibilityScore}/100 | ${accessibilityScore >= 95 ? '✅' : '❌'} |
+            | Best Practices | ${bestPracticesScore}/100 | ${bestPracticesScore >= 90 ? '✅' : '❌'} |
+            | SEO | ${seoScore}/100 | ${seoScore >= 90 ? '✅' : '❌'} |
+
+            ${performanceScore < 85 || accessibilityScore < 95 || bestPracticesScore < 90 || seoScore < 90 ? '⚠️ **Performance regression detected!** Please review recent changes.' : '✅ All performance metrics meet thresholds.'}
+
+            ---
+            *Generated by GitHub Actions Performance Monitoring*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

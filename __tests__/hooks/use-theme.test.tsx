@@ -59,12 +59,15 @@ describe("useTheme Hook", () => {
     expect(document.documentElement.classList.contains("dark")).toBe(true);
   });
 
-  test("persists theme preference to localStorage", () => {
+  test("persists theme preference to localStorage", async () => {
     const { result } = renderHook(() => useTheme(), { wrapper });
 
     act(() => {
       result.current.setTheme("dark");
     });
+
+    // Wait for the debounced localStorage operation to complete
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     expect(localStorage.getItem("pomofit-theme")).toBe('"dark"');
 

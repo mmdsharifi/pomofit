@@ -1,61 +1,46 @@
 "use client";
 
-import { useState, Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState, lazy } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { History, Settings, Loader2, BookOpen } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { TimerProvider } from "@/lib/timer-context";
-import dynamic from "next/dynamic";
+import Timer from "@/components/timer";
+import { useTimer, TimerProvider } from "@/lib/timer-context";
+import { useTasks } from "@/lib/task-context";
+import { useAuth } from "@/lib/auth-context";
+import {
+  TaskList,
+  useTaskList,
+  TaskListProvider,
+} from "@/components/task-list";
+import { Loader2, History, Settings, BookOpen } from "lucide-react";
 import ConfettiAnimation from "@/components/confetti-animation";
 import GoalReachedModal from "@/components/goal-reached-modal";
-import { useTimer } from "@/lib/timer-context";
-import { TaskListProvider, useTaskList } from "@/components/task-list";
-import { useTasks } from "@/lib/task-context";
 import PWAInstallPrompt from "@/components/pwa-install-prompt";
 import OfflineIndicator from "@/components/offline-indicator";
 import NotificationPermissionPrompt from "@/components/notification-permission-prompt";
 import ServiceWorkerErrorHandler from "@/components/sw-error-handler";
-import { useAuth } from "@/lib/auth-context";
+import PerformanceMonitor from "@/components/performance-monitor";
 
-// Dynamically import components
-const Timer = dynamic(() => import("@/components/timer"), {
-  loading: () => <Skeleton className="h-[70vh] w-full" />,
-});
-const HistoryPage = dynamic(() => import("@/app/history/page"), {
-  loading: () => <HistoryFallback />,
-});
-const SettingsPage = dynamic(() => import("@/app/settings/page"), {
-  loading: () => <SettingsFallback />,
-});
-const JournalPage = dynamic(() => import("@/app/journal/page"), {
-  loading: () => <JournalFallback />,
-});
+// Lazy load pages to reduce initial bundle size
+const JournalPage = lazy(() => import("./journal/journal-client"));
+const HistoryPage = lazy(() => import("./history/history-client"));
+const SettingsPage = lazy(() => import("./settings/settings-client"));
 
-// Loading fallbacks
+// Fallback components
+const JournalFallback = () => (
+  <div className="flex items-center justify-center h-full">
+    <Loader2 className="h-8 w-8 animate-spin" />
+  </div>
+);
+
 const HistoryFallback = () => (
-  <div className="w-full space-y-4">
-    <Skeleton className="h-8 w-full" />
-    <Skeleton className="h-[400px] w-full" />
-    <Skeleton className="h-20 w-full" />
+  <div className="flex items-center justify-center h-full">
+    <Loader2 className="h-8 w-8 animate-spin" />
   </div>
 );
 
 const SettingsFallback = () => (
-  <div className="w-full space-y-4">
-    <Skeleton className="h-8 w-full" />
-    <Skeleton className="h-[200px] w-full" />
-    <Skeleton className="h-[200px] w-full" />
-    <Skeleton className="h-10 w-40 mx-auto" />
-  </div>
-);
-
-const JournalFallback = () => (
-  <div className="w-full space-y-4">
-    <Skeleton className="h-8 w-full" />
-    <div className="grid grid-cols-3 gap-4">
-      <Skeleton className="h-[400px] w-full" />
-      <Skeleton className="h-[400px] w-full col-span-2" />
-    </div>
+  <div className="flex items-center justify-center h-full">
+    <Loader2 className="h-8 w-8 animate-spin" />
   </div>
 );
 
@@ -221,6 +206,9 @@ function ClientContent() {
 
       {/* Service Worker Error Handler */}
       <ServiceWorkerErrorHandler />
+
+      {/* Performance Monitor (development only) */}
+      <PerformanceMonitor />
     </>
   );
 }

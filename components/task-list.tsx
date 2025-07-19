@@ -782,7 +782,7 @@ export function TaskList() {
       <Drawer open={open} onOpenChange={setOpen}>
         <DrawerContent>
           <DrawerHeader>
-            <DrawerTitle>Tasks</DrawerTitle>
+            <DrawerTitle>🎯 Tasks</DrawerTitle>
             <DrawerDescription>
               Manage your tasks and start focusing
             </DrawerDescription>
@@ -797,7 +797,7 @@ export function TaskList() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[60%] mx-auto left-[50%] translate-x-[-50%]">
         <DialogHeader>
-          <DialogTitle>Tasks</DialogTitle>
+          <DialogTitle>🎯 Tasks</DialogTitle>
           <DialogDescription>
             Manage your tasks and start focusing
           </DialogDescription>

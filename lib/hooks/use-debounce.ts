@@ -30,20 +30,28 @@ export function useDebounce<T>(value: T, delay: number): T {
  */
 export function useThrottle<T>(value: T, limit: number): T {
   const [throttledValue, setThrottledValue] = React.useState<T>(value);
-  const lastRan = useRef<number>(Date.now());
+  const lastExecuted = useRef<number>(0);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const handler = setTimeout(() => {
-      if (Date.now() - lastRan.current >= limit) {
+    if (throttledValue === value) return;
+    const now = Date.now();
+    if (lastExecuted.current === 0 || now - lastExecuted.current >= limit) {
+      setThrottledValue(value);
+      lastExecuted.current = now;
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    } else {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      const remaining = limit - (now - lastExecuted.current);
+      timeoutRef.current = setTimeout(() => {
         setThrottledValue(value);
-        lastRan.current = Date.now();
-      }
-    }, limit - (Date.now() - lastRan.current));
-
+        lastExecuted.current = Date.now();
+      }, remaining);
+    }
     return () => {
-      clearTimeout(handler);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [value, limit]);
+  }, [value, limit, throttledValue]);
 
   return throttledValue;
 }

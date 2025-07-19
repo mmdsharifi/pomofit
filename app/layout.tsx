@@ -7,12 +7,15 @@ import { TaskProvider } from "@/lib/task-context";
 import { AuthProvider } from "@/lib/auth-context";
 import { StagewiseToolbar } from "@stagewise/toolbar-next";
 import ReactPlugin from "@stagewise-plugins/react";
+import PerformanceMonitor from "@/components/performance-monitor";
 
-// Load fonts with optional fallback
+// Load fonts with optimized settings for performance
 const splineSans = Spline_Sans({
   subsets: ["latin"],
   display: "swap",
   fallback: ["system-ui", "sans-serif"],
+  preload: true,
+  adjustFontFallback: true,
 });
 
 const splineSansMono = Spline_Sans_Mono({
@@ -20,6 +23,8 @@ const splineSansMono = Spline_Sans_Mono({
   display: "swap",
   variable: "--font-spline-sans-mono",
   fallback: ["monospace"],
+  preload: true,
+  adjustFontFallback: true,
 });
 
 export const metadata = {
@@ -35,6 +40,10 @@ export const metadata = {
     telephone: false,
   },
   generator: "v0.dev",
+  // Performance optimizations
+  other: {
+    "X-DNS-Prefetch-Control": "on",
+  },
 };
 
 export const viewport = {
@@ -53,6 +62,27 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* DNS prefetch for external resources */}
+        <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+        <link rel="dns-prefetch" href="//fonts.gstatic.com" />
+
+        {/* Preconnect to external domains */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+
+        {/* Preload critical resources */}
+        <link
+          rel="preload"
+          href="/manifest.json"
+          as="fetch"
+          crossOrigin="anonymous"
+        />
+        <link rel="preload" href="/icons/icon-192x192.png" as="image" />
+
         <meta name="application-name" content="Pomofit" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -100,7 +130,7 @@ export default function RootLayout({
           content="black-translucent"
         />
 
-        {/* iOS splash screens */}
+        {/* iOS splash screens - optimized loading */}
         <link
           rel="apple-touch-startup-image"
           href="/icons/apple-splash-2048-2732.png"
@@ -154,6 +184,7 @@ export default function RootLayout({
               {children}
               <Toaster />
               <StagewiseToolbar config={{ plugins: [ReactPlugin] }} />
+              <PerformanceMonitor />
             </TaskProvider>
           </ThemeProvider>
         </AuthProvider>

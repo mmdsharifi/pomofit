@@ -10,74 +10,88 @@ describe("useDebounce", () => {
     jest.useRealTimers();
   });
 
-  it("should debounce function calls", () => {
-    const mockFn = jest.fn();
-    const { result } = renderHook(() => useDebounce(mockFn, 1000));
+  it("should debounce value changes", () => {
+    const { result, rerender } = renderHook(
+      ({ value }) => useDebounce(value, 1000),
+      { initialProps: { value: "initial" } }
+    );
 
-    // Call the debounced function multiple times
-    act(() => {
-      result.current();
-      result.current();
-      result.current();
-    });
+    // Initial value should be returned immediately
+    expect(result.current).toBe("initial");
 
-    // Function should not be called immediately
-    expect(mockFn).not.toHaveBeenCalled();
+    // Change the value
+    rerender({ value: "changed" });
+
+    // Value should not change immediately
+    expect(result.current).toBe("initial");
 
     // Fast forward time
     act(() => {
       jest.advanceTimersByTime(1000);
     });
 
-    // Function should be called only once
-    expect(mockFn).toHaveBeenCalledTimes(1);
+    // Value should now be updated
+    expect(result.current).toBe("changed");
   });
 
-  it("should pass arguments to the debounced function", () => {
-    const mockFn = jest.fn();
-    const { result } = renderHook(() => useDebounce(mockFn, 1000));
+  it("should handle multiple rapid changes", () => {
+    const { result, rerender } = renderHook(
+      ({ value }) => useDebounce(value, 1000),
+      { initialProps: { value: "initial" } }
+    );
 
-    act(() => {
-      result.current("test", 123);
-    });
+    // Make multiple rapid changes
+    rerender({ value: "change1" });
+    rerender({ value: "change2" });
+    rerender({ value: "change3" });
 
+    // Value should still be initial
+    expect(result.current).toBe("initial");
+
+    // Fast forward time
     act(() => {
       jest.advanceTimersByTime(1000);
     });
 
-    expect(mockFn).toHaveBeenCalledWith("test", 123);
+    // Should have the last value
+    expect(result.current).toBe("change3");
   });
 
-  it("should clear previous timeout when called again", () => {
-    const mockFn = jest.fn();
-    const { result } = renderHook(() => useDebounce(mockFn, 1000));
+  it("should reset timer on new changes", () => {
+    const { result, rerender } = renderHook(
+      ({ value }) => useDebounce(value, 1000),
+      { initialProps: { value: "initial" } }
+    );
 
-    act(() => {
-      result.current();
-    });
+    // Change value
+    rerender({ value: "change1" });
 
-    act(() => {
-      jest.advanceTimersByTime(500);
-    });
-
-    // Call again before timeout
-    act(() => {
-      result.current();
-    });
-
+    // Wait half the delay
     act(() => {
       jest.advanceTimersByTime(500);
     });
 
-    // Function should not be called yet
-    expect(mockFn).not.toHaveBeenCalled();
+    // Value should still be initial
+    expect(result.current).toBe("initial");
 
+    // Change again
+    rerender({ value: "change2" });
+
+    // Wait half the delay again
     act(() => {
       jest.advanceTimersByTime(500);
     });
 
-    // Function should be called only once
-    expect(mockFn).toHaveBeenCalledTimes(1);
+    // Value should still be initial
+    expect(result.current).toBe("initial");
+
+    // Wait the full delay
+    act(() => {
+      jest.advanceTimersByTime(500);
+    });
+
+    // Now should have the last value
+    expect(result.current).toBe("change2");
   });
 });
 
@@ -90,60 +104,76 @@ describe("useThrottle", () => {
     jest.useRealTimers();
   });
 
-  it("should throttle function calls", () => {
-    const mockFn = jest.fn();
-    const { result } = renderHook(() => useThrottle(mockFn, 1000));
+  it("should throttle value changes", () => {
+    const { result, rerender } = renderHook(
+      ({ value }) => useThrottle(value, 1000),
+      { initialProps: { value: "initial" } }
+    );
 
-    // Call the throttled function multiple times
-    act(() => {
-      result.current();
-      result.current();
-      result.current();
-    });
+    // Initial value should be returned immediately
+    expect(result.current).toBe("initial");
 
-    // Function should be called only once immediately
-    expect(mockFn).toHaveBeenCalledTimes(1);
+    // Change the value
+    rerender({ value: "changed" });
 
-    // Fast forward time
+    // Value should change immediately (throttle allows first change)
+    expect(result.current).toBe("changed");
+
+    // Change again quickly
+    rerender({ value: "changed2" });
+
+    // Value should not change (throttled)
+    expect(result.current).toBe("changed");
+
+    // Wait for throttle period
     act(() => {
       jest.advanceTimersByTime(1000);
     });
 
-    // Call again
-    act(() => {
-      result.current();
-    });
-
-    // Function should be called again
-    expect(mockFn).toHaveBeenCalledTimes(2);
+    // Now should update
+    expect(result.current).toBe("changed2");
   });
 
-  it("should pass arguments to the throttled function", () => {
-    const mockFn = jest.fn();
-    const { result } = renderHook(() => useThrottle(mockFn, 1000));
+  it("should handle multiple changes within throttle period", () => {
+    const { result, rerender } = renderHook(
+      ({ value }) => useThrottle(value, 1000),
+      { initialProps: { value: "initial" } }
+    );
 
+    // Make multiple changes
+    rerender({ value: "change1" });
+    rerender({ value: "change2" });
+    rerender({ value: "change3" });
+
+    // Should have the first change
+    expect(result.current).toBe("change1");
+
+    // Wait for throttle period
     act(() => {
-      result.current("test", 123);
+      jest.advanceTimersByTime(1000);
     });
 
-    expect(mockFn).toHaveBeenCalledWith("test", 123);
+    // Should have the last change
+    expect(result.current).toBe("change3");
   });
 
-  it("should not call function if called before throttle period", () => {
-    const mockFn = jest.fn();
-    const { result } = renderHook(() => useThrottle(mockFn, 1000));
+  it("should allow changes after throttle period", () => {
+    const { result, rerender } = renderHook(
+      ({ value }) => useThrottle(value, 1000),
+      { initialProps: { value: "initial" } }
+    );
 
+    // First change
+    rerender({ value: "change1" });
+    expect(result.current).toBe("change1");
+
+    // Wait for throttle period
     act(() => {
-      result.current();
+      jest.advanceTimersByTime(1000);
     });
 
-    expect(mockFn).toHaveBeenCalledTimes(1);
-
-    act(() => {
-      result.current();
-    });
-
-    // Function should not be called again
-    expect(mockFn).toHaveBeenCalledTimes(1);
+    // Second change should work
+    rerender({ value: "change2" });
+    expect(result.current).toBe("change2");
   });
 });

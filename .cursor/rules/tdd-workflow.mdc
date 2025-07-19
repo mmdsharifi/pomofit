@@ -1,0 +1,111 @@
+---
+title: Test-Driven Development (TDD) Workflow
+---
+
+# Test-Driven Development (TDD) Workflow
+
+## Core Principle: Red-Green-Refactor Cycle
+
+When implementing any feature, follow this strict TDD workflow:
+
+### 1. Write Tests First (Red Phase)
+
+- **Always start by writing comprehensive tests** for the feature
+- Include edge cases, error conditions, and boundary scenarios
+- Tests should fail initially (Red phase)
+- Use descriptive test names that explain the expected behavior
+- Test both happy path and error scenarios
+
+### 2. Run Tests to Verify Failures
+
+- Execute the test suite to confirm tests are failing as expected
+- Verify that the failures are due to missing implementation, not test errors
+- Document any unexpected test behavior
+
+### 3. Implement Code (Green Phase)
+
+- Write the minimum code necessary to make tests pass
+- Focus on functionality over optimization initially
+- Keep implementation simple and straightforward
+- Run tests frequently during implementation
+
+### 4. Refactor (Refactor Phase)
+
+- Once all tests pass, refactor the code for better design
+- Maintain test coverage during refactoring
+- Ensure all tests still pass after refactoring
+
+## Testing Guidelines
+
+### Test Structure
+
+- Use descriptive test names: `it("should handle empty input gracefully")`
+- Group related tests in describe blocks
+- Test one behavior per test case
+- Include setup and teardown as needed
+
+### Edge Cases to Consider
+
+- Empty/null/undefined inputs
+- Boundary values (0, -1, max values)
+- Invalid data types
+- Network failures/timeouts
+- Concurrent operations
+- Memory constraints
+- User permission scenarios
+
+### Error Handling Tests
+
+- Test all error conditions
+- Verify proper error messages
+- Test error recovery mechanisms
+- Ensure graceful degradation
+
+## Implementation Checklist
+
+Before considering a feature complete:
+
+- [ ] All tests written and failing initially
+- [ ] Tests run and fail as expected
+- [ ] Implementation written to make tests pass
+- [ ] All tests now pass
+- [ ] Code refactored for better design
+- [ ] All tests still pass after refactoring
+- [ ] Edge cases covered
+- [ ] Error scenarios tested
+- [ ] Performance considerations addressed (if applicable)
+
+## Example Workflow
+
+1. **User requests**: "Add user authentication"
+2. **Write tests first**:
+   ```typescript
+   describe("User Authentication", () => {
+     it("should authenticate valid credentials", () => {});
+     it("should reject invalid credentials", () => {});
+     it("should handle network errors gracefully", () => {});
+     it("should validate email format", () => {});
+   });
+   ```
+3. **Run tests** - confirm they fail
+4. **Implement authentication logic** - make tests pass
+5. **Refactor** - improve code quality while maintaining test coverage
+
+## Important Notes
+
+- **Never skip the test-first approach** - even for simple features
+- **Don't stop until all tests pass** - this is non-negotiable
+- **Test coverage should be comprehensive** - aim for high coverage
+- **Refactor regularly** - keep code clean and maintainable
+- **Document any deviations** - if TDD approach is modified, explain why
+
+## Tools and Commands
+
+Use these commands during TDD workflow:
+
+- `npm test` or `npx jest` - run test suite
+- `npm test -- --watch` - run tests in watch mode
+- `npm test -- --coverage` - check test coverage
+- `npm test -- [test-file]` - run specific test file
+
+Remember: **Tests are your safety net and documentation. Write them first, make them pass, then refactor.**

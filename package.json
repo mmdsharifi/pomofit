@@ -1,6 +1,6 @@
 {
   "name": "my-v0-project",
-  "version": "0.2.0.1752997191.0",
+  "version": "0.3.0.1752997250.0",
   "private": true,
   "scripts": {
     "build": "next build",
@@ -21,6 +21,9 @@
     "semantic:analyze": "node scripts/semantic-version.js analyze",
     "semantic:increment": "node scripts/semantic-version.js increment",
     "semantic:status": "node scripts/semantic-version.js status",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "dev:watch": "npm run version:init && concurrently \"npm run dev\" \"npm run version:watch\""
   },
   "dependencies": {

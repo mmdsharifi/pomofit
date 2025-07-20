@@ -1,0 +1,143 @@
+# Auto-Versioning System Guide
+
+## Overview
+
+The Pomofit application uses a comprehensive auto-versioning system that automatically tracks changes and updates version numbers in real-time. This ensures every meaningful change is reflected in the version number.
+
+## Core Components
+
+### Version Management
+
+- **File**: [lib/version.ts](mdc:lib/version.ts)
+- **Purpose**: Core version logic, caching, and auto-increment functionality
+- **Key Functions**: `getVersionInfo()`, `incrementChangeCount()`, `refreshVersion()`
+
+### File Watcher
+
+- **File**: [scripts/auto-version.js](mdc:scripts/auto-version.js)
+- **Purpose**: Monitors file changes and triggers version updates
+- **Usage**: `npm run version:watch`
+
+### Git Integration
+
+- **File**: [scripts/pre-commit-version.js](mdc:scripts/pre-commit-version.js)
+- **Purpose**: Pre-commit hook for automatic version increments
+- **Trigger**: Runs on every git commit
+
+### Version Display
+
+- **File**: [components/version-display.tsx](mdc:components/version-display.tsx)
+- **Purpose**: UI component showing version information
+- **Features**: Build number, change count, commit hash display
+
+## Version Format
+
+```
+MAJOR.MINOR.PATCH.BUILD.CHANGES
+```
+
+Example: `1.2.3.1752995785.1`
+
+- **MAJOR.MINOR.PATCH**: From package.json (manual control)
+- **BUILD**: Timestamp-based build number
+- **CHANGES**: Number of file changes since last reset
+
+## Development Workflow
+
+### Start Development with Auto-Versioning
+
+```bash
+npm run dev:watch
+```
+
+### Manual Version Control
+
+```bash
+npm run version:init      # Initialize tracking
+npm run version:watch     # Start file watcher
+npm run version:status    # Check current version
+npm run version:reset     # Reset tracking
+npm run version:increment patch|minor|major
+```
+
+### Watched Directories
+
+- `app/**/*` - Next.js app directory
+- `components/**/*` - React components
+- `lib/**/*` - Utility libraries
+- `hooks/**/*` - Custom React hooks
+- `types/**/*` - TypeScript definitions
+- `public/**/*` - Static assets
+- `styles/**/*` - CSS and styling
+
+### Ignored Patterns
+
+- `**/node_modules/**`
+- `**/*.test.*`, `**/*.spec.*`
+- `**/__tests__/**`, `**/__mocks__/**`
+- `**/.git/**`, `**/.next/**`
+
+## Storage
+
+### Client-Side (localStorage)
+
+- `pomofit-build-number`: Current build number
+- `pomofit-change-count`: Number of changes
+- `pomofit-last-change`: Timestamp of last change
+- `pomofit-build-date`: Build date
+- `pomofit-version-history`: Version change history
+
+### Server-Side Files
+
+- `.version-info.json`: Current version information
+- `.change-log.json`: Detailed change log
+
+## Best Practices
+
+1. **Use `npm run dev:watch`** for development
+2. **Commit frequently** to maintain accurate tracking
+3. **Review version info** before releases
+4. **Reset tracking** when starting major features
+5. **Group commits logically** (see commit strategy rule)
+
+## Troubleshooting
+
+### Version Not Updating
+
+1. Check if file watcher is running: `npm run version:status`
+2. Verify file is in watched directories
+3. Check for ignored patterns
+
+### Reset Version Tracking
+
+```bash
+npm run version:reset
+```
+
+### Manual Version Override
+
+```bash
+npm run version:increment patch
+```
+
+## Integration Points
+
+### CI/CD Integration
+
+- **Vercel**: Uses `VERCEL_GIT_COMMIT_SHA`
+- **GitHub Actions**: Uses `GITHUB_SHA`
+- **Custom Builds**: Uses `GIT_COMMIT_SHA`
+
+### Performance Monitoring
+
+The auto-versioning system integrates with the performance monitoring utilities to track version-related operations.
+
+Reference files:
+
+- [docs/guides/AUTO_VERSIONING.md](mdc:docs/guides/AUTO_VERSIONING.md)
+- [docs/guides/PERFORMANCE_OPTIMIZATIONS.md](mdc:docs/guides/PERFORMANCE_OPTIMIZATIONS.md)
+  description:
+  globs:
+  alwaysApply: false
+
+---

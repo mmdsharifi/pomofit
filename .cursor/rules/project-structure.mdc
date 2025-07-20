@@ -1,0 +1,222 @@
+# Pomofit Project Structure Guide
+
+## Project Overview
+
+Pomofit is a Next.js-based Pomodoro timer application with real-time auto-versioning, performance optimizations, and comprehensive testing.
+
+## Core Architecture
+
+### App Directory Structure (Next.js 13+)
+
+- **Entry Point**: [app/page.tsx](mdc:app/page.tsx)
+- **Layout**: [app/layout.tsx](mdc:app/layout.tsx)
+- **Global Styles**: [app/globals.css](mdc:app/globals.css)
+
+### Key Directories
+
+#### Components
+
+- **Location**: `components/`
+- **UI Components**: [components/ui/](mdc:components/ui/)
+- **Feature Components**: [components/timer.tsx](mdc:components/timer.tsx), [components/task-list.tsx](mdc:components/task-list.tsx)
+- **Specialized**: [components/version-display.tsx](mdc:components/version-display.tsx), [components/sync-status.tsx](mdc:components/sync-status.tsx)
+
+#### Libraries & Utilities
+
+- **Core Logic**: [lib/](mdc:lib/)
+- **Context Providers**: [lib/timer-context.tsx](mdc:lib/timer-context.tsx), [lib/task-context.tsx](mdc:lib/task-context.tsx)
+- **Version Management**: [lib/version.ts](mdc:lib/version.ts)
+- **Performance**: [lib/utils/performance.ts](mdc:lib/utils/performance.ts)
+
+#### Scripts & Automation
+
+- **Auto-Versioning**: [scripts/auto-version.js](mdc:scripts/auto-version.js)
+- **Pre-commit Hooks**: [scripts/pre-commit-version.js](mdc:scripts/pre-commit-version.js)
+- **Performance Testing**: [scripts/performance-analysis.js](mdc:scripts/performance-analysis.js)
+
+#### Testing
+
+- **Test Structure**: `__tests__/`
+- **Component Tests**: [**tests**/components/](mdc:__tests__/components/)
+- **Integration Tests**: [**tests**/integration/](mdc:__tests__/integration/)
+- **Utility Tests**: [**tests**/lib/](mdc:__tests__/lib/)
+
+#### Documentation
+
+- **Guides**: [docs/guides/](mdc:docs/guides/)
+- **Performance**: [docs/guides/PERFORMANCE_OPTIMIZATIONS.md](mdc:docs/guides/PERFORMANCE_OPTIMIZATIONS.md)
+- **Auto-Versioning**: [docs/guides/AUTO_VERSIONING.md](mdc:docs/guides/AUTO_VERSIONING.md)
+
+## Key Features
+
+### 1. **Auto-Versioning System**
+
+- Real-time file watching and version tracking
+- Git integration with pre-commit hooks
+- Build number and change count tracking
+- Comprehensive version display
+
+### 2. **Performance Optimizations**
+
+- localStorage access caching
+- Console logging reduction
+- Component memoization
+- Performance monitoring utilities
+
+### 3. **Testing Strategy**
+
+- Comprehensive test coverage
+- Integration tests for key workflows
+- Performance testing
+- Visual regression testing
+
+### 4. **Development Workflow**
+
+- Auto-versioning during development
+- Performance monitoring
+- Organized commit strategy
+- Continuous testing
+
+## Development Commands
+
+### Core Development
+
+```bash
+npm run dev              # Standard development
+npm run dev:watch        # Development with auto-versioning
+npm run build           # Production build
+npm run start           # Production server
+```
+
+### Version Management
+
+```bash
+npm run version:init    # Initialize version tracking
+npm run version:watch   # Start file watcher
+npm run version:status  # Check current version
+npm run version:reset   # Reset version tracking
+```
+
+### Testing
+
+```bash
+npm test               # Run all tests
+npm run test:watch     # Watch mode testing
+npm run test:coverage  # Coverage report
+```
+
+### Performance
+
+```bash
+npm run lighthouse     # Lighthouse performance tests
+npm run performance    # Performance analysis
+```
+
+## File Naming Conventions
+
+### Components
+
+- **PascalCase**: `TimerComponent.tsx`
+- **Feature-based**: `timer.tsx`, `task-list.tsx`
+- **UI Components**: `ui/button.tsx`, `ui/dialog.tsx`
+
+### Utilities
+
+- **camelCase**: `version.ts`, `performance.ts`
+- **kebab-case**: `auto-version.js`, `pre-commit-version.js`
+
+### Tests
+
+- **Component**: `component-name.test.tsx`
+- **Integration**: `feature-integration.test.tsx`
+- **Utilities**: `utility-name.test.ts`
+
+## Import Patterns
+
+### Absolute Imports
+
+```typescript
+// ✅ Good: Use absolute imports
+import { TimerProvider } from "@/lib/timer-context";
+import { Button } from "@/components/ui/button";
+import { getVersionInfo } from "@/lib/version";
+```
+
+### Relative Imports
+
+```typescript
+// ✅ Good: Use relative for closely related files
+import { TimerDisplay } from "./timer-display";
+import { useTimer } from "../hooks/use-timer";
+```
+
+## State Management
+
+### Context Providers
+
+- **Timer State**: [lib/timer-context.tsx](mdc:lib/timer-context.tsx)
+- **Task State**: [lib/task-context.tsx](mdc:lib/task-context.tsx)
+- **Theme State**: [lib/theme-context.tsx](mdc:lib/theme-context.tsx)
+- **Auth State**: [lib/auth-context.tsx](mdc:lib/auth-context.tsx)
+
+### Local Storage
+
+- **Version Data**: `pomofit-*` keys
+- **User Preferences**: `pomofit-settings`
+- **Task Data**: `pomofit-tasks`
+- **History Data**: `pomofit-history`
+
+## Configuration Files
+
+### Build & Development
+
+- **Next.js Config**: [next.config.mjs](mdc:next.config.mjs)
+- **TypeScript Config**: [tsconfig.json](mdc:tsconfig.json)
+- **Tailwind Config**: [tailwind.config.ts](mdc:tailwind.config.ts)
+- **Jest Config**: [jest.config.js](mdc:jest.config.js)
+
+### Package Management
+
+- **Dependencies**: [package.json](mdc:package.json)
+- **Lock File**: [package-lock.json](mdc:package-lock.json)
+
+## Best Practices
+
+### Code Organization
+
+1. **Feature-based grouping** for components
+2. **Utility separation** for reusable logic
+3. **Test co-location** with source files
+4. **Documentation** for complex features
+
+### Performance
+
+1. **Memoization** for expensive operations
+2. **Caching** for localStorage access
+3. **Lazy loading** for large components
+4. **Bundle optimization** for production
+
+### Testing
+
+1. **Unit tests** for utilities and hooks
+2. **Integration tests** for user workflows
+3. **Performance tests** for critical paths
+4. **Visual regression** for UI components
+
+### Version Control
+
+1. **Group commits** by logical changes
+2. **Use auto-versioning** during development
+3. **Include tests** with feature changes
+4. **Document breaking changes**
+
+Reference files:
+
+- [README.md](mdc:README.md)
+- [package.json](mdc:package.json)
+- [next.config.mjs](mdc:next.config.mjs)
+  description:
+  globs:
+  alwaysApply: false
+
+---

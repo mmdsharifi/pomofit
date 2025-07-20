@@ -1,0 +1,135 @@
+# Commit Strategy: Group by Group Commits
+
+## Commit Organization Rules
+
+Always commit changes in logical groups, not in one large commit. Each commit should represent a single, cohesive change or feature.
+
+### Commit Group Categories:
+
+1. **Performance Optimizations**
+
+   - Performance fixes and optimizations
+   - Caching improvements
+   - Memory usage optimizations
+   - Bundle size reductions
+
+2. **Feature Implementation**
+
+   - New features and functionality
+   - UI/UX improvements
+   - Component additions
+   - API integrations
+
+3. **Bug Fixes**
+
+   - Bug fixes and error handling
+   - Edge case handling
+   - Error boundary improvements
+
+4. **Refactoring**
+
+   - Code refactoring and cleanup
+   - Architecture improvements
+   - Code organization changes
+   - Naming improvements
+
+5. **Testing**
+
+   - Test additions and updates
+   - Test fixes and improvements
+   - Test coverage enhancements
+
+6. **Documentation**
+
+   - Documentation updates
+   - README changes
+   - Code comments
+   - API documentation
+
+7. **Configuration & Dependencies**
+
+   - Package.json changes
+   - Configuration updates
+   - Dependency updates
+   - Build tool changes
+
+8. **Auto-Versioning System**
+   - Version tracking changes
+   - Build number updates
+   - Change count increments
+   - Version display updates
+
+### Commit Message Format:
+
+```
+type(scope): brief description
+
+- Detailed bullet points of changes
+- Additional context if needed
+
+Fixes #issue-number
+```
+
+### Examples:
+
+```
+perf(timer): optimize localStorage access and reduce console logs
+
+- Implement memoization for pomodoro count calculation
+- Add caching to history utils to reduce localStorage reads
+- Remove excessive console logging from timer context
+- Optimize sync status component with reduced check frequency
+
+Fixes performance issues with frequent localStorage access
+```
+
+```
+feat(versioning): implement comprehensive auto-versioning system
+
+- Add real-time file watcher for version tracking
+- Implement build number and change count tracking
+- Create Git integration with pre-commit hooks
+- Update version display component with detailed info
+- Add comprehensive documentation for auto-versioning
+
+Enables automatic version updates with every code change
+```
+
+### When to Create New Commits:
+
+- ✅ Different logical changes
+- ✅ Separate features or fixes
+- ✅ Different file types (components vs utils vs tests)
+- ✅ Performance vs feature vs bug fix changes
+- ✅ Major architectural changes
+
+### When to Combine Commits:
+
+- ❌ Multiple related changes to the same feature
+- ❌ Small fixes that are part of the same logical change
+- ❌ Documentation updates for the same feature
+- ❌ Test updates for the same component
+
+### Pre-commit Checklist:
+
+1. Review staged changes: `git status`
+2. Ensure changes belong to the same logical group
+3. Write descriptive commit message
+4. Include relevant issue numbers
+5. Test that changes work together
+6. Run tests to ensure nothing is broken
+
+### Auto-Versioning Integration:
+
+The auto-versioning system will automatically increment version numbers on commits. Each commit group should represent a meaningful version increment.
+
+Reference files:
+
+- [scripts/auto-version.js](mdc:scripts/auto-version.js)
+- [scripts/pre-commit-version.js](mdc:scripts/pre-commit-version.js)
+- [lib/version.ts](mdc:lib/version.ts)
+  description:
+  globs:
+  alwaysApply: false
+
+---

@@ -1,0 +1,165 @@
+# Performance Optimization Patterns
+
+## Core Performance Principles
+
+### 1. **localStorage Access Optimization**
+
+- **Problem**: Frequent localStorage access causes performance degradation
+- **Solution**: Implement caching with TTL (Time To Live)
+- **Pattern**: Cache data for 5 minutes, refresh only when needed
+
+### 2. **Console Logging Reduction**
+
+- **Problem**: Excessive console logs impact performance
+- **Solution**: Remove debug logs in production, use performance monitoring
+- **Pattern**: Use `console.warn` for important issues only
+
+### 3. **Memoization Strategy**
+
+- **Problem**: Expensive calculations on every render
+- **Solution**: Use `useMemo` and `useCallback` for expensive operations
+- **Pattern**: Cache results for 5+ minutes, clear on significant changes
+
+### 4. **Component Re-render Optimization**
+
+- **Problem**: Unnecessary re-renders cascade through component tree
+- **Solution**: Implement React.memo, useMemo, and proper dependency arrays
+- **Pattern**: Only re-render when props/state actually change
+
+## Implementation Examples
+
+### Timer Context Optimization
+
+Reference: [lib/timer-context.tsx](mdc:lib/timer-context.tsx)
+
+```typescript
+// ✅ Good: Memoized pomodoro count
+const memoizedPomodoroCount = useMemo(() => {
+  const now = Date.now();
+  if (now - lastUpdateRef.current > 5 * 60 * 1000) {
+    lastUpdateRef.current = now;
+    return countTodaysPomodoroSessions();
+  }
+  return pomodorosCompleted;
+}, [pomodorosCompleted]);
+```
+
+### History Utils Caching
+
+Reference: [lib/history-utils.ts](mdc:lib/history-utils.ts)
+
+```typescript
+// ✅ Good: Cached history access
+let historyCache: PomodoroSession[] | null = null;
+let historyCacheTimestamp = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+export function getHistory(): PomodoroSession[] {
+  const now = Date.now();
+  if (historyCache && now - historyCacheTimestamp < CACHE_DURATION) {
+    return historyCache;
+  }
+  // ... fetch and cache
+}
+```
+
+### Sync Status Optimization
+
+Reference: [components/sync-status.tsx](mdc:components/sync-status.tsx)
+
+```typescript
+// ✅ Good: Reduced check frequency
+const CACHE_DURATION = 30 * 1000; // 30 seconds
+const checkInterval = 60 * 1000; // 1 minute instead of every few seconds
+```
+
+## Performance Monitoring
+
+### Performance Monitor
+
+Reference: [lib/utils/performance.ts](mdc:lib/utils/performance.ts)
+
+- **localStorage Access Tracking**: Warns if >100 accesses per minute
+- **Console Log Tracking**: Warns if >50 logs per minute
+- **Memory Usage Monitoring**: Tracks memory consumption
+- **Debounce/Throttle Utilities**: Prevents excessive function calls
+
+### Usage Patterns
+
+```typescript
+// ✅ Good: Monitored localStorage access
+import { monitoredLocalStorage } from "@/lib/utils/performance";
+monitoredLocalStorage.getItem("key");
+
+// ✅ Good: Monitored console logging
+import { monitoredConsole } from "@/lib/utils/performance";
+monitoredConsole.log("important message");
+```
+
+## Anti-Patterns to Avoid
+
+### ❌ Bad: Frequent localStorage access
+
+```typescript
+// Don't do this - called every second
+useEffect(() => {
+  const history = localStorage.getItem("history"); // Called every render
+}, []);
+```
+
+### ❌ Bad: Excessive console logging
+
+```typescript
+// Don't do this - logs every second
+console.log("Timer updated:", time); // Called every timer tick
+```
+
+### ❌ Bad: No memoization
+
+```typescript
+// Don't do this - recalculates every render
+const expensiveValue = calculateExpensiveThing(props); // No memoization
+```
+
+## Performance Checklist
+
+### Before Committing Code:
+
+1. ✅ Check for unnecessary localStorage access
+2. ✅ Remove debug console logs
+3. ✅ Implement memoization for expensive operations
+4. ✅ Use React.memo for components that don't need frequent updates
+5. ✅ Optimize useEffect dependency arrays
+6. ✅ Test performance impact with large datasets
+
+### Performance Testing:
+
+```bash
+# Run performance tests
+npm run test:performance
+
+# Check bundle size
+npm run build && npm run analyze
+
+# Run Lighthouse tests
+npm run lighthouse
+```
+
+## Integration with Auto-Versioning
+
+The performance optimizations integrate with the auto-versioning system:
+
+- Performance changes trigger version updates
+- Version tracking includes performance metrics
+- Build numbers reflect performance improvements
+
+Reference files:
+
+- [docs/guides/PERFORMANCE_OPTIMIZATIONS.md](mdc:docs/guides/PERFORMANCE_OPTIMIZATIONS.md)
+- [scripts/performance-analysis.js](mdc:scripts/performance-analysis.js)
+- [scripts/lighthouse-test.js](mdc:scripts/lighthouse-test.js)
+  description:
+  globs:
+  alwaysApply: false
+
+---

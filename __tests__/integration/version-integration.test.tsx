@@ -16,6 +16,17 @@ jest.mock("@/lib/version", () => ({
 describe("Version Integration", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Reset the mock to return the default version info
+    const { getVersionInfo, formatVersion } = require("@/lib/version");
+    getVersionInfo.mockReturnValue({
+      version: "1.2.3",
+      buildDate: "Jan 15, 2024, 10:30 AM",
+      commitHash: "abcdef1234567890",
+      lastModified: "Jan 15, 2024, 10:30 AM",
+    });
+    formatVersion.mockImplementation(
+      (info: any) => `v${info.version} (${info.buildDate})`
+    );
   });
 
   it("should display version information correctly", async () => {
@@ -52,12 +63,13 @@ describe("Version Integration", () => {
 
   it("should handle different version formats correctly", async () => {
     const { getVersionInfo, formatVersion } = require("@/lib/version");
-    getVersionInfo.mockReturnValue({
+    const newVersionInfo = {
       version: "2.0.0-beta.1",
       buildDate: "Dec 25, 2024, 03:45 PM",
       commitHash: "abcdef1234567890",
       lastModified: "Dec 25, 2024, 03:45 PM",
-    });
+    };
+    getVersionInfo.mockReturnValue(newVersionInfo);
     formatVersion.mockReturnValue("v2.0.0-beta.1 (Dec 25, 2024, 03:45 PM)");
 
     render(<VersionDisplay />);
@@ -89,6 +101,7 @@ describe("Version Integration", () => {
     render(<VersionDisplay />);
 
     await waitFor(() => {
+      // Component should render nothing when there's an error
       expect(screen.queryByText(/v\d+\.\d+\.\d+/)).not.toBeInTheDocument();
     });
   });
@@ -99,7 +112,7 @@ describe("Version Integration", () => {
     await waitFor(() => {
       const container = screen
         .getByText(/v\d+\.\d+\.\d+.*\(.*\)/)
-        .closest("div");
+        .closest("div")?.parentElement?.parentElement;
       expect(container).toHaveClass(
         "p-2",
         "text-xs",
@@ -118,7 +131,7 @@ describe("Version Integration", () => {
     await waitFor(() => {
       const flexContainer = screen
         .getByText(/v\d+\.\d+\.\d+.*\(.*\)/)
-        .closest(".flex");
+        .closest("div")?.parentElement;
       expect(flexContainer).toHaveClass(
         "flex",
         "items-center",

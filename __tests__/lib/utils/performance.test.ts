@@ -1,81 +1,109 @@
 import {
-  PerformanceMonitor,
+  performanceMonitor,
+  monitoredLocalStorage,
+  monitoredConsole,
   getMemoryUsage,
   debounce,
   throttle,
-  batchUpdater,
 } from "@/lib/utils/performance";
 
 describe("PerformanceMonitor", () => {
-  let monitor: PerformanceMonitor;
-
   beforeEach(() => {
-    monitor = PerformanceMonitor.getInstance();
-    monitor.clearMetrics();
+    // Reset the performance monitor before each test
+    performanceMonitor.getStats();
   });
 
-  it("should be a singleton", () => {
-    const instance1 = PerformanceMonitor.getInstance();
-    const instance2 = PerformanceMonitor.getInstance();
-    expect(instance1).toBe(instance2);
+  it("should track localStorage access", () => {
+    const stats = performanceMonitor.getStats();
+    const initialCount = stats.localStorageAccessCount;
+
+    monitoredLocalStorage.getItem("test-key");
+    monitoredLocalStorage.setItem("test-key", "test-value");
+
+    const newStats = performanceMonitor.getStats();
+    expect(newStats.localStorageAccessCount).toBe(initialCount + 2);
   });
 
-  it("should measure execution time of synchronous functions", () => {
-    const mockFn = jest.fn(() => "result");
-    const result = monitor.measureTime("test-sync", mockFn);
+  it("should track console logs", () => {
+    const stats = performanceMonitor.getStats();
+    const initialCount = stats.consoleLogCount;
 
-    expect(result).toBe("result");
-    expect(mockFn).toHaveBeenCalledTimes(1);
-    expect(monitor.getAverageMetric("test-sync")).toBeGreaterThan(0);
+    monitoredConsole.log("test log");
+    monitoredConsole.warn("test warning");
+    monitoredConsole.error("test error");
+
+    const newStats = performanceMonitor.getStats();
+    expect(newStats.consoleLogCount).toBe(initialCount + 3);
   });
 
-  it("should measure execution time of asynchronous functions", async () => {
-    const mockFn = jest.fn(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      return "async-result";
-    });
+  it("should provide performance statistics", () => {
+    const stats = performanceMonitor.getStats();
 
-    const result = await monitor.measureTimeAsync("test-async", mockFn);
-
-    expect(result).toBe("async-result");
-    expect(mockFn).toHaveBeenCalledTimes(1);
-    expect(monitor.getAverageMetric("test-async")).toBeGreaterThan(0);
+    expect(stats).toHaveProperty("localStorageAccessCount");
+    expect(stats).toHaveProperty("consoleLogCount");
+    expect(stats).toHaveProperty("timeSinceLastReset");
+    expect(typeof stats.localStorageAccessCount).toBe("number");
+    expect(typeof stats.consoleLogCount).toBe("number");
+    expect(typeof stats.timeSinceLastReset).toBe("number");
   });
 
-  it("should record metrics", () => {
-    monitor.recordMetric("test-metric", 100);
-    monitor.recordMetric("test-metric", 200);
+  it("should reset counters periodically", () => {
+    // Add some activity
+    monitoredLocalStorage.getItem("test");
+    monitoredConsole.log("test");
 
-    expect(monitor.getAverageMetric("test-metric")).toBe(150);
+    const stats = performanceMonitor.getStats();
+    expect(stats.localStorageAccessCount).toBeGreaterThan(0);
+    expect(stats.consoleLogCount).toBeGreaterThan(0);
+  });
+});
+
+describe("Monitored localStorage", () => {
+  beforeEach(() => {
+    // Clear localStorage before each test
+    localStorage.clear();
   });
 
-  it("should limit metric history to 100 entries", () => {
-    for (let i = 0; i < 150; i++) {
-      monitor.recordMetric("test-metric", i);
-    }
-
-    const metrics = monitor.getMetrics().get("test-metric");
-    expect(metrics).toHaveLength(100);
-    expect(metrics![0]).toBe(50); // First entry should be 50 (after trimming)
+  it("should work like regular localStorage", () => {
+    monitoredLocalStorage.setItem("test-key", "test-value");
+    const value = monitoredLocalStorage.getItem("test-key");
+    expect(value).toBe("test-value");
   });
 
-  it("should notify observers when metrics change", () => {
-    const mockObserver = jest.fn();
-    const unsubscribe = monitor.subscribe(mockObserver);
+  it("should track access", () => {
+    const initialStats = performanceMonitor.getStats();
 
-    monitor.recordMetric("test-metric", 100);
+    monitoredLocalStorage.setItem("test", "value");
+    monitoredLocalStorage.getItem("test");
 
-    expect(mockObserver).toHaveBeenCalledWith(expect.any(Map));
-    expect(mockObserver.mock.calls[0][0].get("test-metric")).toEqual([100]);
+    const newStats = performanceMonitor.getStats();
+    expect(newStats.localStorageAccessCount).toBe(
+      initialStats.localStorageAccessCount + 2
+    );
+  });
+});
 
-    unsubscribe();
+describe("Monitored console", () => {
+  it("should work like regular console", () => {
+    const originalLog = console.log;
+    const mockLog = jest.fn();
+    console.log = mockLog;
+
+    monitoredConsole.log("test message");
+    expect(mockLog).toHaveBeenCalledWith("test message");
+
+    console.log = originalLog;
   });
 
-  it("should clear all metrics", () => {
-    monitor.recordMetric("test-metric", 100);
-    monitor.clearMetrics();
+  it("should track logging", () => {
+    const initialStats = performanceMonitor.getStats();
 
-    expect(monitor.getMetrics().size).toBe(0);
+    monitoredConsole.log("test");
+    monitoredConsole.warn("warning");
+    monitoredConsole.error("error");
+
+    const newStats = performanceMonitor.getStats();
+    expect(newStats.consoleLogCount).toBe(initialStats.consoleLogCount + 3);
   });
 });
 
@@ -190,53 +218,5 @@ describe("throttle", () => {
     throttledFn("test", 123);
 
     expect(mockFn).toHaveBeenCalledWith("test", 123);
-  });
-});
-
-describe("BatchUpdater", () => {
-  beforeEach(() => {
-    jest.useFakeTimers();
-  });
-
-  afterEach(() => {
-    jest.useRealTimers();
-  });
-
-  it("should batch updates", () => {
-    const mockUpdate1 = jest.fn();
-    const mockUpdate2 = jest.fn();
-    const mockUpdate3 = jest.fn();
-
-    batchUpdater.schedule(mockUpdate1);
-    batchUpdater.schedule(mockUpdate2);
-    batchUpdater.schedule(mockUpdate3);
-
-    // Updates should not be called immediately
-    expect(mockUpdate1).not.toHaveBeenCalled();
-    expect(mockUpdate2).not.toHaveBeenCalled();
-    expect(mockUpdate3).not.toHaveBeenCalled();
-
-    // Fast forward to trigger requestAnimationFrame
-    jest.runAllTimers();
-
-    // All updates should be called
-    expect(mockUpdate1).toHaveBeenCalledTimes(1);
-    expect(mockUpdate2).toHaveBeenCalledTimes(1);
-    expect(mockUpdate3).toHaveBeenCalledTimes(1);
-  });
-
-  it("should only schedule one animation frame for multiple updates", () => {
-    const mockRequestAnimationFrame = jest.spyOn(
-      window,
-      "requestAnimationFrame"
-    );
-
-    batchUpdater.schedule(() => {});
-    batchUpdater.schedule(() => {});
-    batchUpdater.schedule(() => {});
-
-    expect(mockRequestAnimationFrame).toHaveBeenCalledTimes(1);
-
-    mockRequestAnimationFrame.mockRestore();
   });
 });

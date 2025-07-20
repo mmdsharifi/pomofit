@@ -11,7 +11,13 @@
     "version:minor": "npm version minor",
     "version:major": "npm version major",
     "version:show": "node -p \"require('./package.json').version\"",
-    "release": "npm run build && npm run version:patch"
+    "release": "npm run build && npm run version:patch",
+    "version:init": "node scripts/auto-version.js init",
+    "version:watch": "node scripts/auto-version.js watch",
+    "version:status": "node scripts/auto-version.js status",
+    "version:reset": "node scripts/auto-version.js reset",
+    "version:increment": "node scripts/auto-version.js increment",
+    "dev:watch": "npm run version:init && concurrently \"npm run dev\" \"npm run version:watch\""
   },
   "dependencies": {
     "@ai-sdk/groq": "latest",
@@ -92,6 +98,8 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "babel-jest": "^30.0.4",
+    "chokidar": "^4.0.3",
+    "concurrently": "^9.2.0",
     "eslint": "8.57.1",
     "eslint-config-next": "15.4.1",
     "jest": "^30.0.4",

@@ -28,9 +28,24 @@ export default function VersionDisplay() {
   return (
     <div className="p-2 text-xs text-muted-foreground bg-muted/50 rounded border border-border">
       <div className="flex items-center justify-between">
-        <span className="font-mono">{formattedVersion}</span>
-        <span className="text-muted-foreground/70">v{versionInfo.version}</span>
+        <div className="flex flex-col gap-1">
+          <span className="font-mono">{formattedVersion}</span>
+          <div className="flex gap-2 text-muted-foreground/70">
+            <span>Build: {versionInfo.buildNumber}</span>
+            <span>Changes: {versionInfo.changeCount}</span>
+          </div>
+        </div>
+        <div className="flex flex-col items-end gap-1">
+          <span className="text-muted-foreground/70">
+            v{versionInfo.version}
+          </span>
+          <span className="text-muted-foreground/50 text-[10px]">
+            {versionInfo.commitHash}
+          </span>
+        </div>
       </div>
     </div>
   );
 }
+
+// Auto-versioning test comment

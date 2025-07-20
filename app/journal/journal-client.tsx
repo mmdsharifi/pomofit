@@ -140,8 +140,7 @@ export default function JournalClient() {
     }
   };
 
-  // Debug: log journals state
-  console.log("JOURNALS STATE", journals);
+  // Debug logging removed for performance
 
   useEffect(() => {
     const checkAndUpdateDate = () => {

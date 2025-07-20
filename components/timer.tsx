@@ -306,6 +306,8 @@ export default function Timer({ useIconButtons = false }: TimerProps) {
         open={showNoteDialog}
         onOpenChange={setShowNoteDialog}
         onSubmit={handleNoteSubmit}
+        sessionTitle={currentTask?.title || "Pomodoro Session"}
+        sessionId={pomodorosCompleted}
       />
 
       {/* Reset confirmation modal */}

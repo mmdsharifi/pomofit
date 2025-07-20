@@ -1,53 +1,77 @@
-"use client"
-import { Button } from "@/components/ui/button"
-import type React from "react"
+"use client";
+import { Button } from "@/components/ui/button";
+import type React from "react";
 
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
-import { cn } from "@/lib/utils"
-import { Check, GripVertical, Play, Trash2, Edit } from "lucide-react"
-import type { Task } from "@/types/task"
-import { useSortable } from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
-import { forwardRef } from "react"
-import { Badge } from "@/components/ui/badge"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { Check, GripVertical, Play, Trash2, Edit } from "lucide-react";
+import type { Task } from "@/types/task";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { forwardRef } from "react";
+import { Badge } from "@/components/ui/badge";
 
 interface TaskItemProps {
-  task: Task
-  onToggle: () => void
-  onDelete: () => void
-  onPlay: () => void
-  onEdit: () => void
-  isFocused?: boolean
-  searchQuery?: string
+  task: Task;
+  onToggle: () => void;
+  onDelete: () => void;
+  onPlay: () => void;
+  onEdit: () => void;
+  isFocused?: boolean;
+  searchQuery?: string;
 }
 
 export const TaskItem = forwardRef<HTMLDivElement, TaskItemProps>(
-  ({ task, onToggle, onDelete, onPlay, onEdit, isFocused = false, searchQuery = "" }, ref) => {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id })
+  (
+    {
+      task,
+      onToggle,
+      onDelete,
+      onPlay,
+      onEdit,
+      isFocused = false,
+      searchQuery = "",
+    },
+    ref
+  ) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id: task.id });
 
     const style = {
       transform: CSS.Transform.toString(transform),
       transition,
-    }
+    };
 
     // Combine the refs
     const setRefs = (element: HTMLDivElement) => {
-      setNodeRef(element)
+      setNodeRef(element);
       if (typeof ref === "function") {
-        ref(element)
+        ref(element);
       } else if (ref) {
-        ;(ref as React.MutableRefObject<HTMLDivElement | null>).current = element
+        (ref as React.MutableRefObject<HTMLDivElement | null>).current =
+          element;
       }
-    }
+    };
 
     // Function to highlight search matches
     const highlightMatch = (text: string, query: string) => {
-      if (!query.trim()) return text
+      if (!query.trim()) return text;
 
-      const normalizedQuery = query.toLowerCase().trim()
-      if (!text.toLowerCase().includes(normalizedQuery)) return text
+      const normalizedQuery = query.toLowerCase().trim();
+      if (!text.toLowerCase().includes(normalizedQuery)) return text;
 
-      const parts = text.split(new RegExp(`(${normalizedQuery})`, "gi"))
+      const parts = text.split(new RegExp(`(${normalizedQuery})`, "gi"));
 
       return parts.map((part, i) =>
         part.toLowerCase() === normalizedQuery ? (
@@ -56,40 +80,40 @@ export const TaskItem = forwardRef<HTMLDivElement, TaskItemProps>(
           </span>
         ) : (
           part
-        ),
-      )
-    }
+        )
+      );
+    };
 
     // Handle keyboard events directly in the component
     const handleKeyDown = (e: React.KeyboardEvent) => {
       // Handle spacebar to toggle task completion
       if (e.key === " " || e.code === "Space") {
-        e.preventDefault()
-        onToggle()
-        return
+        e.preventDefault();
+        onToggle();
+        return;
       }
 
       // Handle Enter to start the task
       if (e.key === "Enter") {
-        e.preventDefault()
-        onPlay()
-        return
+        e.preventDefault();
+        onPlay();
+        return;
       }
 
       // Handle E to edit
       if (e.key.toLowerCase() === "e") {
-        e.preventDefault()
-        onEdit()
-        return
+        e.preventDefault();
+        onEdit();
+        return;
       }
 
       // Handle D to delete
       if (e.key.toLowerCase() === "d") {
-        e.preventDefault()
-        onDelete()
-        return
+        e.preventDefault();
+        onDelete();
+        return;
       }
-    }
+    };
 
     return (
       <TooltipProvider>
@@ -99,13 +123,13 @@ export const TaskItem = forwardRef<HTMLDivElement, TaskItemProps>(
           className={cn(
             "group flex items-center gap-3 rounded-lg border bg-card p-3 text-card-foreground shadow-sm transition-colors hover:bg-accent cursor-pointer",
             isDragging && "opacity-50",
-            isFocused && "ring-2 ring-primary ring-offset-2 bg-accent",
-            task.completed && "bg-muted/50",
+            isFocused && "border-primary border-2 bg-accent shadow-md",
+            task.completed && "bg-muted/50"
           )}
           onClick={(e) => {
             // Only trigger edit if not clicking on a button
             if (!(e.target as HTMLElement).closest("button")) {
-              onEdit()
+              onEdit();
             }
           }}
           tabIndex={0}
@@ -130,31 +154,46 @@ export const TaskItem = forwardRef<HTMLDivElement, TaskItemProps>(
                 size="sm"
                 className="h-6 w-6 rounded-full p-0"
                 onClick={(e) => {
-                  e.stopPropagation()
-                  onToggle()
+                  e.stopPropagation();
+                  onToggle();
                 }}
-                aria-label={task.completed ? "Mark as incomplete" : "Mark as complete"}
+                aria-label={
+                  task.completed ? "Mark as incomplete" : "Mark as complete"
+                }
               >
                 <div
                   className={cn(
                     "h-4 w-4 rounded-full border-2",
-                    task.completed ? "border-primary bg-primary text-primary-foreground" : "border-primary",
+                    task.completed
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-primary"
                   )}
                 >
                   {task.completed && <Check className="h-3 w-3" />}
                 </div>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Mark as {task.completed ? "incomplete" : "complete"} (Space)</TooltipContent>
+            <TooltipContent>
+              Mark as {task.completed ? "incomplete" : "complete"} (Space)
+            </TooltipContent>
           </Tooltip>
 
           {!task.completed && (
-            <code className="rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm">{task.order}.</code>
+            <code className="rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm">
+              {task.order}.
+            </code>
           )}
 
           <div className="flex-1 flex items-center gap-2">
-            <span className={cn("text-sm", task.completed && "text-muted-foreground line-through")}>
-              {searchQuery ? highlightMatch(task.title, searchQuery) : task.title}
+            <span
+              className={cn(
+                "text-sm",
+                task.completed && "text-muted-foreground line-through"
+              )}
+            >
+              {searchQuery
+                ? highlightMatch(task.title, searchQuery)
+                : task.title}
             </span>
 
             {/* Only display Pomodoro count if it's explicitly greater than 0 */}
@@ -176,8 +215,8 @@ export const TaskItem = forwardRef<HTMLDivElement, TaskItemProps>(
                   size="sm"
                   className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 group-focus:opacity-100"
                   onClick={(e) => {
-                    e.stopPropagation()
-                    onEdit()
+                    e.stopPropagation();
+                    onEdit();
                   }}
                   aria-label="Edit task"
                 >
@@ -194,8 +233,8 @@ export const TaskItem = forwardRef<HTMLDivElement, TaskItemProps>(
                   size="sm"
                   className="h-6 w-6 p-0"
                   onClick={(e) => {
-                    e.stopPropagation()
-                    onPlay()
+                    e.stopPropagation();
+                    onPlay();
                   }}
                   aria-label="Start timer with this task"
                 >
@@ -212,8 +251,8 @@ export const TaskItem = forwardRef<HTMLDivElement, TaskItemProps>(
                   size="sm"
                   className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 group-focus:opacity-100"
                   onClick={(e) => {
-                    e.stopPropagation()
-                    onDelete()
+                    e.stopPropagation();
+                    onDelete();
                   }}
                   aria-label="Delete task"
                 >
@@ -225,8 +264,8 @@ export const TaskItem = forwardRef<HTMLDivElement, TaskItemProps>(
           </div>
         </div>
       </TooltipProvider>
-    )
-  },
-)
+    );
+  }
+);
 
-TaskItem.displayName = "TaskItem"
+TaskItem.displayName = "TaskItem";

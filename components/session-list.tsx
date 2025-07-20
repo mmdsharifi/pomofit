@@ -178,8 +178,8 @@ export default function SessionList({
                 <Card key={index} className="border border-border/50">
                   <CardContent className="p-4">
                     {event.type === "session" ? (
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-3">
                           <div
                             className={`p-2 rounded-full ${getSessionColor(
                               event.data.mode
@@ -188,41 +188,51 @@ export default function SessionList({
                             {getSessionIcon(event.data.mode)}
                           </div>
                           <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-medium">
-                                {getSessionTitle(event.data)}
-                              </h3>
-                              <Badge variant="outline" className="text-xs">
-                                {formatDuration(event.data.duration)}
-                              </Badge>
-                            </div>
-                            <div className="text-sm text-muted-foreground mt-1">
-                              {formatTime(event.data.startTime)}
-                            </div>
+                            <h3 className="font-medium">
+                              {getSessionTitle(event.data)}
+                            </h3>
+                            {/* Session description - show note if available */}
+                            {event.data.note &&
+                              event.data.note !==
+                                getSessionTitle(event.data) && (
+                                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                                  {event.data.note}
+                                </p>
+                              )}
+                          </div>
+                        </div>
+                        {/* Right side - duration and time */}
+                        <div className="flex flex-col items-end gap-1">
+                          <Badge variant="outline" className="text-xs">
+                            {formatDuration(event.data.duration)}
+                          </Badge>
+                          <div className="text-sm text-muted-foreground">
+                            {formatTime(event.data.startTime)}
                           </div>
                         </div>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-3">
                           <div className="p-2 rounded-full bg-green-500/10 border-green-500/20 text-green-700 dark:text-green-300">
                             <CheckCircle className="h-4 w-4" />
                           </div>
                           <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-medium">
-                                {event.data.taskTitle}
-                              </h3>
-                              <Badge
-                                variant="outline"
-                                className="text-xs bg-green-500/10 text-green-700 dark:text-green-300"
-                              >
-                                ✓ Completed
-                              </Badge>
-                            </div>
-                            <div className="text-sm text-muted-foreground mt-1">
-                              {formatTime(event.data.completedAt)}
-                            </div>
+                            <h3 className="font-medium">
+                              {event.data.taskTitle}
+                            </h3>
+                          </div>
+                        </div>
+                        {/* Right side - completion badge and time */}
+                        <div className="flex flex-col items-end gap-1">
+                          <Badge
+                            variant="outline"
+                            className="text-xs bg-green-500/10 text-green-700 dark:text-green-300"
+                          >
+                            ✓ Completed
+                          </Badge>
+                          <div className="text-sm text-muted-foreground">
+                            {formatTime(event.data.completedAt)}
                           </div>
                         </div>
                       </div>

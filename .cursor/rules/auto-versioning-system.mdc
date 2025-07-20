@@ -60,6 +60,15 @@ npm run version:reset     # Reset tracking
 npm run version:increment patch|minor|major
 ```
 
+### Semantic Versioning (Recommended)
+
+```bash
+npm run semantic:init     # Initialize semantic versioning
+npm run semantic:analyze  # Analyze commits and suggest increment
+npm run semantic:increment # Apply semantic versioning
+npm run semantic:status   # Check semantic version status
+```
+
 ### Watched Directories
 
 - `app/**/*` - Next.js app directory
@@ -135,7 +144,8 @@ The auto-versioning system integrates with the performance monitoring utilities 
 Reference files:
 
 - [docs/guides/AUTO_VERSIONING.md](mdc:docs/guides/AUTO_VERSIONING.md)
-- [docs/guides/PERFORMANCE_OPTIMIZATIONS.md](mdc:docs/guides/PERFORMANCE_OPTIMIZATIONS.md)
+- [docs/guides/SEMANTIC_VERSIONING.md](mdc:docs/guides/SEMANTIC_VERSIONING.md)
+- [docs/guides/PERFORMANCE_OPTIMIZATIONS.md](mdc:docs/PERFORMANCE_OPTIMIZATIONS.md)
   description:
   globs:
   alwaysApply: false

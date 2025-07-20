@@ -1,6 +1,6 @@
 {
   "name": "my-v0-project",
-  "version": "0.1.0",
+  "version": "0.2.0.1752997191.0",
   "private": true,
   "scripts": {
     "build": "next build",
@@ -17,6 +17,10 @@
     "version:status": "node scripts/auto-version.js status",
     "version:reset": "node scripts/auto-version.js reset",
     "version:increment": "node scripts/auto-version.js increment",
+    "semantic:init": "node scripts/semantic-version.js init",
+    "semantic:analyze": "node scripts/semantic-version.js analyze",
+    "semantic:increment": "node scripts/semantic-version.js increment",
+    "semantic:status": "node scripts/semantic-version.js status",
     "dev:watch": "npm run version:init && concurrently \"npm run dev\" \"npm run version:watch\""
   },
   "dependencies": {

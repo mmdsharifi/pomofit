@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useOnlineStatus } from "@/lib/sync-utils";
 import { useAuth } from "@/lib/auth-context";
 import { Loader2, CloudOff, Cloud } from "lucide-react";
@@ -20,15 +20,42 @@ export function SyncStatus() {
   >(user ? (isOnline ? "synced" : "offline") : "unauthenticated");
   const [pendingChanges, setPendingChanges] = useState(0);
 
+  // Cache for sync queue data to reduce localStorage access
+  const syncQueueCache = useRef<{ data: any[]; timestamp: number } | null>(
+    null
+  );
+  const CACHE_DURATION = 30 * 1000; // 30 seconds
+
   // Check for pending changes in the sync queue
   useEffect(() => {
     if (!user || !isOnline) return;
 
     const checkSyncQueue = () => {
       try {
+        const now = Date.now();
+
+        // Use cached data if it's still valid
+        if (
+          syncQueueCache.current &&
+          now - syncQueueCache.current.timestamp < CACHE_DURATION
+        ) {
+          const pendingOps = syncQueueCache.current.data.filter(
+            (op: any) => !op.synced
+          ).length;
+          setPendingChanges(pendingOps);
+          setSyncState(pendingOps > 0 ? "syncing" : "synced");
+          return;
+        }
+
         const queue = localStorage.getItem("pomofit-sync-queue");
         const syncQueue = queue ? JSON.parse(queue) : [];
         const pendingOps = syncQueue.filter((op: any) => !op.synced).length;
+
+        // Update cache
+        syncQueueCache.current = {
+          data: syncQueue,
+          timestamp: now,
+        };
 
         setPendingChanges(pendingOps);
         setSyncState(pendingOps > 0 ? "syncing" : "synced");
@@ -37,9 +64,9 @@ export function SyncStatus() {
       }
     };
 
-    // Check immediately and then every 30 seconds (reduced from 5 seconds)
+    // Check immediately and then every 60 seconds (increased from 30 seconds)
     checkSyncQueue();
-    const interval = setInterval(checkSyncQueue, 30000);
+    const interval = setInterval(checkSyncQueue, 60000);
 
     return () => clearInterval(interval);
   }, [user, isOnline]);

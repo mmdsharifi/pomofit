@@ -3,95 +3,58 @@
  */
 
 // Performance monitoring utilities
-export class PerformanceMonitor {
-  private static instance: PerformanceMonitor;
-  private metrics: Map<string, number[]> = new Map();
-  private observers: Set<(metrics: Map<string, number[]>) => void> = new Set();
+class PerformanceMonitor {
+  private localStorageAccessCount = 0;
+  private consoleLogCount = 0;
+  private lastResetTime = Date.now();
+  private readonly RESET_INTERVAL = 60000; // 1 minute
 
-  static getInstance(): PerformanceMonitor {
-    if (!PerformanceMonitor.instance) {
-      PerformanceMonitor.instance = new PerformanceMonitor();
-    }
-    return PerformanceMonitor.instance;
+  incrementLocalStorageAccess() {
+    this.localStorageAccessCount++;
+    this.checkThresholds();
   }
 
-  /**
-   * Measure execution time of a function
-   */
-  measureTime<T>(name: string, fn: () => T): T {
-    const start = performance.now();
-    const result = fn();
-    const end = performance.now();
-    const duration = end - start;
-
-    this.recordMetric(name, duration);
-    return result;
+  incrementConsoleLog() {
+    this.consoleLogCount++;
+    this.checkThresholds();
   }
 
-  /**
-   * Measure execution time of an async function
-   */
-  async measureTimeAsync<T>(name: string, fn: () => Promise<T>): Promise<T> {
-    const start = performance.now();
-    const result = await fn();
-    const end = performance.now();
-    const duration = end - start;
+  private checkThresholds() {
+    const now = Date.now();
 
-    this.recordMetric(name, duration);
-    return result;
-  }
-
-  /**
-   * Record a performance metric
-   */
-  recordMetric(name: string, value: number): void {
-    if (!this.metrics.has(name)) {
-      this.metrics.set(name, []);
-    }
-    this.metrics.get(name)!.push(value);
-
-    // Keep only last 100 measurements
-    if (this.metrics.get(name)!.length > 100) {
-      this.metrics.get(name)!.shift();
+    // Reset counters every minute
+    if (now - this.lastResetTime > this.RESET_INTERVAL) {
+      this.resetCounters();
+      this.lastResetTime = now;
+      return;
     }
 
-    this.notifyObservers();
+    // Warn if too many localStorage accesses in a minute
+    if (this.localStorageAccessCount > 100) {
+      console.warn(
+        `Performance: ${this.localStorageAccessCount} localStorage accesses in the last minute. Consider implementing caching.`
+      );
+    }
+
+    // Warn if too many console logs in a minute
+    if (this.consoleLogCount > 50) {
+      console.warn(
+        `Performance: ${this.consoleLogCount} console logs in the last minute. Consider reducing debug output.`
+      );
+    }
   }
 
-  /**
-   * Get average metric value
-   */
-  getAverageMetric(name: string): number {
-    const values = this.metrics.get(name);
-    if (!values || values.length === 0) return 0;
-    return values.reduce((sum, val) => sum + val, 0) / values.length;
+  private resetCounters() {
+    this.localStorageAccessCount = 0;
+    this.consoleLogCount = 0;
   }
 
-  /**
-   * Get all metrics
-   */
-  getMetrics(): Map<string, number[]> {
-    return new Map(this.metrics);
-  }
-
-  /**
-   * Clear all metrics
-   */
-  clearMetrics(): void {
-    this.metrics.clear();
-    this.notifyObservers();
-  }
-
-  /**
-   * Subscribe to metric updates
-   */
-  subscribe(callback: (metrics: Map<string, number[]>) => void): () => void {
-    this.observers.add(callback);
-    return () => this.observers.delete(callback);
-  }
-
-  private notifyObservers(): void {
-    this.observers.forEach((callback) => callback(this.getMetrics()));
+  getStats() {
+    return {
+      localStorageAccessCount: this.localStorageAccessCount,
+      consoleLogCount: this.consoleLogCount,
+      timeSinceLastReset: Date.now() - this.lastResetTime,
+    };
   }
 }
 
@@ -197,6 +160,37 @@ export class BatchUpdater {
   }
 }
 
-// Export singleton instance
-export const performanceMonitor = PerformanceMonitor.getInstance();
-export const batchUpdater = new BatchUpdater();
+// Global performance monitor instance
+export const performanceMonitor = new PerformanceMonitor();
+
+// Wrapper for localStorage access with monitoring
+export const monitoredLocalStorage = {
+  getItem: (key: string) => {
+    performanceMonitor.incrementLocalStorageAccess();
+    return localStorage.getItem(key);
+  },
+  setItem: (key: string, value: string) => {
+    performanceMonitor.incrementLocalStorageAccess();
+    return localStorage.setItem(key, value);
+  },
+  removeItem: (key: string) => {
+    performanceMonitor.incrementLocalStorageAccess();
+    return localStorage.removeItem(key);
+  },
+};
+
+// Wrapper for console.log with monitoring
+export const monitoredConsole = {
+  log: (...args: any[]) => {
+    performanceMonitor.incrementConsoleLog();
+    console.log(...args);
+  },
+  warn: (...args: any[]) => {
+    performanceMonitor.incrementConsoleLog();
+    console.warn(...args);
+  },
+  error: (...args: any[]) => {
+    performanceMonitor.incrementConsoleLog();
+    console.error(...args);
+  },
+};

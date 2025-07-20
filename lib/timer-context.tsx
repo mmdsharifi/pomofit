@@ -8,6 +8,7 @@ import {
   useEffect,
   useCallback,
   useRef,
+  useMemo,
   type ReactNode,
 } from "react";
 import { useToast } from "@/components/ui/use-toast";
@@ -228,8 +229,15 @@ function TimerProviderInner({
     if (currentTaskId) {
       const task = tasks.find((t) => t.id === currentTaskId);
       if (task) {
-        currentTaskRef.current = { id: currentTaskId, title: task.title };
-        console.log("Current task updated:", currentTaskId, task.title);
+        const newTaskInfo = { id: currentTaskId, title: task.title };
+        // Only update if the task info actually changed
+        if (
+          currentTaskRef.current.id !== newTaskInfo.id ||
+          currentTaskRef.current.title !== newTaskInfo.title
+        ) {
+          currentTaskRef.current = newTaskInfo;
+          // Remove console.log to reduce noise
+        }
       }
     }
   }, [currentTaskId, tasks]);
@@ -261,6 +269,19 @@ function TimerProviderInner({
     }
     return 0;
   });
+
+  // Memoized count to avoid frequent recalculations
+  const lastUpdateRef = useRef<number>(0);
+  const memoizedPomodoroCount = useMemo(() => {
+    const now = Date.now();
+
+    // Only recalculate if it's been more than 5 minutes since last update
+    if (now - lastUpdateRef.current > 5 * 60 * 1000) {
+      lastUpdateRef.current = now;
+      return countTodaysPomodoroSessions();
+    }
+    return pomodorosCompleted;
+  }, [pomodorosCompleted]);
 
   // Calculate total time based on current mode
   const getTotalTime = useCallback(
@@ -385,7 +406,7 @@ function TimerProviderInner({
 
           // If there's a current task, increment its pomodoro count
           if (currentTaskId && incrementTaskPomodoros) {
-            console.log("Incrementing pomodoro count for task:", currentTaskId);
+            // Remove console.log to reduce noise
             incrementTaskPomodoros(currentTaskId);
           }
 

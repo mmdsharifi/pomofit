@@ -232,8 +232,6 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      console.log(`Incrementing pomodoro count for task: ${id}`);
-
       setTasks((prev) => {
         // Find the task
         const task = prev.find((t) => t.id === id);
@@ -246,7 +244,6 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         const newTasks = prev.map((t) => {
           if (t.id === id) {
             const newCount = (t.pomodoros || 0) + 1;
-            console.log(`Updated pomodoro count for ${t.title}: ${newCount}`);
             const updatedTask = {
               ...t,
               pomodoros: newCount,

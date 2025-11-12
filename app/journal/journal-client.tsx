@@ -6,6 +6,7 @@ import { JournalEditor } from "@/components/journal/journal-editor";
 import { JournalChat } from "@/components/journal/journal-chat";
 import { JournalHistory } from "@/components/journal/journal-history";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { generateId } from "@/lib/generate-id";
 
 export interface JournalEntry {
   id: string;
@@ -88,7 +89,7 @@ export default function JournalClient() {
     } else {
       // Create new entry
       const newEntry: JournalEntry = {
-        id: crypto.randomUUID(),
+        id: generateId(),
         title: entry.title || "",
         content: entry.content || "",
         date: entry.date || selectedDate.toISOString().split("T")[0],
@@ -104,7 +105,7 @@ export default function JournalClient() {
   const handleCreateJournalEntry = () => {
     const now = new Date();
     const newEntry: JournalEntry = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       title: "",
       content: "",
       date: now.toISOString().split("T")[0],

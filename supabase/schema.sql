@@ -37,6 +37,8 @@ create table if not exists public.settings (
   long_break_time integer not null default 15,
   pomodoro_goal integer not null default 8,
   workout_gifs text[] not null default '{"pushups", "squats", "lunges", "jumping-jacks", "plank"}',
+  workout_sources jsonb not null default '{"lottie": true, "fiton": true}'::jsonb,
+  fiton_workouts jsonb not null default '[]'::jsonb,
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now()
 );

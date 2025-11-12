@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth-context"
 import { useEffect, useState, useCallback, useRef } from "react"
 import { useToast } from "@/components/ui/use-toast"
 import { isSupabaseConfigured } from "@/lib/supabase-utils"
+import { generateId } from "@/lib/generate-id"
 
 // Type for sync operations
 export type SyncOperation = {
@@ -181,7 +182,7 @@ export function useSyncQueue() {
       pendingOperations.current[opKey] = setTimeout(() => {
         const queue = getSyncQueue()
         const newOperation: SyncOperation = {
-          id: crypto.randomUUID(),
+          id: generateId(),
           ...operation,
           timestamp: Date.now(),
           synced: false,

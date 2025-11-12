@@ -177,7 +177,10 @@ export default function RootLayout({
           media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
         />
       </head>
-      <body className={`${splineSans.className} ${splineSansMono.variable}`}>
+      <body
+        className={`${splineSans.className} ${splineSansMono.variable}`}
+        suppressHydrationWarning
+      >
         <AuthProvider>
           <ThemeProvider>
             <TaskProvider>

@@ -15,6 +15,7 @@ import { useTaskSync } from "./task-sync-service";
 import { useAuth } from "./auth-context";
 import { useOnlineStatus } from "./sync-utils";
 import { toast } from "sonner";
+import { generateId } from "@/lib/generate-id";
 
 interface TaskContextType {
   tasks: Task[];
@@ -88,7 +89,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
       const nextOrder = getNextActiveTaskOrder(tasks);
 
       const newTask: Task = {
-        id: crypto.randomUUID(),
+        id: generateId(),
         title,
         completed: false,
         order: nextOrder,

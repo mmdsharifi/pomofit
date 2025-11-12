@@ -17,6 +17,7 @@ import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useTasks } from "@/lib/task-context";
 import { TaskList, useTaskList } from "@/components/task-list";
+import FitOnRecommendation from "@/components/fiton-recommendation";
 import {
   Tooltip,
   TooltipContent,
@@ -64,6 +65,10 @@ export default function Timer({ useIconButtons = false }: TimerProps) {
   const hasIncrementedPomodoroRef = useRef(false);
 
   const [showResetConfirmation, setShowResetConfirmation] = useState(false);
+  const breakTitleEmojis = ["💪", "🧘", "🤸", "🏃‍♂️", "🚴", "🥊", "⛹️‍♀️", "🏋️"];
+  const [breakEmoji, setBreakEmoji] = useState(
+    breakTitleEmojis[Math.floor(Math.random() * breakTitleEmojis.length)]
+  );
 
   // Create an array of the total number of pomodoros (goal)
   const pomodoroGoal = settings.pomodoroGoal || 8;
@@ -76,6 +81,9 @@ export default function Timer({ useIconButtons = false }: TimerProps) {
     if (isBreakMode && prevModeRef.current !== mode) {
       sessionIdRef.current = Date.now().toString();
       motivationalMessageRef.current = getRandomMotivationalMessage();
+      setBreakEmoji(
+        breakTitleEmojis[Math.floor(Math.random() * breakTitleEmojis.length)]
+      );
     }
 
     // Reset the increment flag when mode changes
@@ -104,9 +112,19 @@ export default function Timer({ useIconButtons = false }: TimerProps) {
   // Determine if user has exceeded their goal
   const hasExceededGoal = pomodorosCompleted > pomodoroGoal;
 
+  const showLottieWorkout =
+    isBreakMode && (settings.workoutSources?.lottie ?? true);
+
+  const fitOnEnabled = settings.workoutSources?.fiton ?? true;
+
   return (
     <div className="flex flex-col items-center justify-center w-full h-full">
-      <div className="flex flex-col items-center space-y-6 p-6 text-center">
+      <div className="flex flex-col items-center space-y-4 p-6 text-center">
+        {isBreakMode && (
+          <h1 className="text-lg font-semibold flex items-center gap-2">
+            Break Time <span aria-hidden="true">{breakEmoji}</span>
+          </h1>
+        )}
         {/* Show task item during pomodoro or motivational message during break */}
         {!isBreakMode && currentTask ? (
           <div className="flex items-center gap-3 px-4 py-2 rounded-lg border bg-card text-card-foreground shadow-sm group relative">
@@ -299,7 +317,14 @@ export default function Timer({ useIconButtons = false }: TimerProps) {
       </div>
 
       {/* Show workout during breaks */}
-      {isBreakMode && <WorkoutDisplay isActive={isRunning} mode={mode} />}
+      {showLottieWorkout && <WorkoutDisplay isActive={isRunning} mode={mode} />}
+
+      {isBreakMode && fitOnEnabled && settings.fitonWorkouts.length > 0 && (
+        <FitOnRecommendation
+          workouts={settings.fitonWorkouts}
+          className="mt-4 sm:mt-6"
+        />
+      )}
 
       {/* Dialog for adding notes to completed sessions */}
       <SessionNoteDialog

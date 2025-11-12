@@ -1,7 +1,11 @@
 {
-  "version": "0.1.0",
-  "buildNumber": 1752995770,
-  "changeCount": 0,
-  "lastUpdated": "2025-07-20T07:16:10.368Z",
-  "buildDate": "2025-07-20T07:16:10.369Z"
+  "version": "0.3.0.1752997250.0",
+  "buildNumber": 1752997250,
+  "buildDate": "2025-07-20T07:40:50.323Z",
+  "incrementType": "minor",
+  "lastCommit": "eec6ac8fe9d5704eec188e9b9c397004f45794f0",
+  "commitCount": 90,
+  "semanticVersion": "0.3.0",
+  "build": "1752997250",
+  "changes": "0"
 }

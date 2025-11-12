@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Bot, User, Plus } from "lucide-react";
 import type { JournalEntry } from "@/app/journal/journal-client";
+import { generateId } from "@/lib/generate-id";
 
 interface Message {
   id: string;
@@ -50,7 +51,7 @@ export function JournalChat({ journals, onAddTasks }: JournalChatProps) {
     if (!input.trim() || isLoading) return;
 
     const userMessage: Message = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       role: "user",
       content: input,
       timestamp: new Date(),
@@ -95,7 +96,7 @@ export function JournalChat({ journals, onAddTasks }: JournalChatProps) {
       }
 
       const assistantMessage: Message = {
-        id: crypto.randomUUID(),
+        id: generateId(),
         role: "assistant",
         content: responseText,
         timestamp: new Date(),
@@ -106,7 +107,7 @@ export function JournalChat({ journals, onAddTasks }: JournalChatProps) {
     } catch (error) {
       console.error("Error sending message:", error);
       const errorMessage: Message = {
-        id: crypto.randomUUID(),
+        id: generateId(),
         role: "assistant",
         content:
           "I'm having trouble connecting right now. Please check your internet connection and try again.",

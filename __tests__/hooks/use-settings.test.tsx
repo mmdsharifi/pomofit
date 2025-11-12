@@ -3,6 +3,10 @@ import { renderHook, act } from "@testing-library/react";
 import { useSettingsSync } from "../../lib/settings-sync-service";
 import { AuthProvider } from "../../lib/auth-context";
 import { useLocalStorage } from "../../lib/use-local-storage";
+import {
+  defaultFitOnWorkouts,
+  defaultWorkoutSources,
+} from "../../lib/fiton-data";
 
 describe("useSettingsSync Hook API", () => {
   test("provides updateSettings and sync functions", () => {
@@ -26,6 +30,8 @@ describe("useSettingsSync Hook API", () => {
         longBreakTime: 15,
         pomodoroGoal: 8,
         workoutGifs: ["pushups"],
+        workoutSources: { ...defaultWorkoutSources },
+        fitonWorkouts: [...defaultFitOnWorkouts],
         autoStartBreaks: false,
         autoStartPomodoros: false,
         longBreakInterval: 4,
@@ -46,6 +52,8 @@ describe("useLocalStorage for settings state", () => {
         longBreakTime: 15,
         pomodoroGoal: 8,
         workoutGifs: ["pushups", "squats"],
+        workoutSources: { ...defaultWorkoutSources },
+        fitonWorkouts: [...defaultFitOnWorkouts],
         autoStartBreaks: false,
         autoStartPomodoros: false,
         longBreakInterval: 4,

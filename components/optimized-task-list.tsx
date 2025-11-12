@@ -78,6 +78,14 @@ export function OptimizedTaskList({
     [newTaskTitle, addTask]
   );
 
+  const handleQuickAddFromSearch = useCallback(() => {
+    const title = searchTerm.trim();
+    if (!title) return;
+    addTask(title);
+    setSearchTerm("");
+    setShowAddForm(false);
+  }, [searchTerm, addTask]);
+
   const handleToggleTask = useCallback(
     (id: string) => {
       toggleTask(id);
@@ -151,6 +159,23 @@ export function OptimizedTaskList({
               Add
             </Button>
           </form>
+        )}
+
+        {debouncedSearchTerm.trim() !== "" && filteredTasks.length === 0 && (
+          <div className="rounded-lg border border-dashed p-4 space-y-2">
+            <p className="text-sm text-muted-foreground">
+              No tasks found for “{debouncedSearchTerm.trim()}”.
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              className="flex items-center gap-1"
+              onClick={handleQuickAddFromSearch}
+            >
+              <Plus className="w-4 h-4" />
+              Add “{debouncedSearchTerm.trim()}”
+            </Button>
+          </div>
         )}
 
         {/* Task List */}

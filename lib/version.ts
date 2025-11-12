@@ -128,30 +128,12 @@ export function getBuildDate(): string {
 
 // Get commit hash
 export function getCommitHash(): string {
-  try {
-    if (typeof window !== "undefined") {
-      return process.env.NEXT_PUBLIC_GIT_COMMIT_SHA || "development";
-    } else {
-      const { execSync } = require("child_process");
-      try {
-        return execSync("git rev-parse --short HEAD", {
-          encoding: "utf8",
-        }).trim();
-      } catch {
-        return (
-          process.env.VERCEL_GIT_COMMIT_SHA ||
-          process.env.GIT_COMMIT_SHA ||
-          "development"
-        );
-      }
-    }
-  } catch (error) {
-    return (
-      process.env.VERCEL_GIT_COMMIT_SHA ||
-      process.env.GIT_COMMIT_SHA ||
-      "development"
-    );
-  }
+  return (
+    process.env.NEXT_PUBLIC_GIT_COMMIT_SHA ||
+    process.env.VERCEL_GIT_COMMIT_SHA ||
+    process.env.GIT_COMMIT_SHA ||
+    "development"
+  );
 }
 
 // Get last modified date
@@ -172,11 +154,8 @@ export function getVersionInfo(): VersionInfo {
   const buildNumber = getBuildNumber();
   const changeCount = getChangeCount();
 
-  // Create auto-incremented version
-  const autoVersion = `${baseVersion}.${buildNumber}.${changeCount}`;
-
   const versionInfo: VersionInfo = {
-    version: autoVersion,
+    version: baseVersion,
     buildDate: getBuildDate(),
     commitHash: getCommitHash(),
     lastModified: getLastModified(),

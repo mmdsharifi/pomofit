@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Play, Coffee, Pause, CheckCircle } from "lucide-react";
 import type { PomodoroSession, TaskCompletionEvent } from "@/lib/history-utils";
+import SessionDetailsModal from "@/components/session-details-modal";
 
 interface SessionListProps {
   sessions: PomodoroSession[];
@@ -33,6 +35,9 @@ export default function SessionList({
   formatTime,
   formatDuration,
 }: SessionListProps) {
+  const [selectedSession, setSelectedSession] =
+    useState<PomodoroSession | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   // Combine sessions and completions into a single list
   const allEvents = [
     ...sessions.map((session) => ({
@@ -156,94 +161,119 @@ export default function SessionList({
     ).length;
   };
 
-  return (
-    <div className="space-y-6">
-      {Object.entries(groupedEvents).map(
-        ([categoryName, { category, events }]) => (
-          <div key={categoryName} className="space-y-3">
-            {/* Category Header - Simple row without card */}
-            <div className="flex items-center justify-between py-2 border-b border-border">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">{category.emoji}</span>
-                <h3 className="text-lg font-semibold">{category.name}</h3>
-              </div>
-              <Badge variant="secondary">
-                {getPomodoroCount(events)} pomodoros
-              </Badge>
-            </div>
+  const handleSessionClick = (session: PomodoroSession) => {
+    setSelectedSession(session);
+    setIsModalOpen(true);
+  };
 
-            {/* Events List */}
-            <div className="space-y-3">
-              {events.map((event, index) => (
-                <Card key={index} className="border border-border/50">
-                  <CardContent className="p-4">
-                    {event.type === "session" ? (
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start gap-3">
-                          <div
-                            className={`p-2 rounded-full ${getSessionColor(
-                              event.data.mode
-                            )}`}
-                          >
-                            {getSessionIcon(event.data.mode)}
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedSession(null);
+  };
+
+  return (
+    <>
+      <div className="space-y-6">
+        {Object.entries(groupedEvents).map(
+          ([categoryName, { category, events }]) => (
+            <div key={categoryName} className="space-y-3">
+              {/* Category Header - Simple row without card */}
+              <div className="flex items-center justify-between py-2 border-b border-border">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">{category.emoji}</span>
+                  <h3 className="text-lg font-semibold">{category.name}</h3>
+                </div>
+                <Badge variant="secondary">
+                  {getPomodoroCount(events)} pomodoros
+                </Badge>
+              </div>
+
+              {/* Events List */}
+              <div className="space-y-3">
+                {events.map((event, index) => (
+                  <Card
+                    key={index}
+                    className={`border border-border/50 ${
+                      event.type === "session"
+                        ? "cursor-pointer hover:bg-muted/50 transition-colors"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      event.type === "session"
+                        ? handleSessionClick(event.data)
+                        : undefined
+                    }
+                  >
+                    <CardContent className="p-4">
+                      {event.type === "session" ? (
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-3">
+                            <div
+                              className={`p-2 rounded-full ${getSessionColor(
+                                event.data.mode
+                              )}`}
+                            >
+                              {getSessionIcon(event.data.mode)}
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-medium">
+                                {getSessionTitle(event.data)}
+                              </h3>
+                            </div>
                           </div>
-                          <div className="flex-1">
-                            <h3 className="font-medium">
-                              {getSessionTitle(event.data)}
-                            </h3>
-                            {/* Session description - show note if available */}
-                            {event.data.note &&
-                              event.data.note !==
-                                getSessionTitle(event.data) && (
-                                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                                  {event.data.note}
-                                </p>
-                              )}
+                          {/* Right side - duration and time */}
+                          <div className="flex flex-col items-end gap-1">
+                            <Badge variant="outline" className="text-xs">
+                              {formatDuration(event.data.duration)}
+                            </Badge>
+                            <div className="text-sm text-muted-foreground">
+                              {formatTime(event.data.startTime)}
+                            </div>
                           </div>
                         </div>
-                        {/* Right side - duration and time */}
-                        <div className="flex flex-col items-end gap-1">
-                          <Badge variant="outline" className="text-xs">
-                            {formatDuration(event.data.duration)}
-                          </Badge>
-                          <div className="text-sm text-muted-foreground">
-                            {formatTime(event.data.startTime)}
+                      ) : (
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-3">
+                            <div className="p-2 rounded-full bg-green-500/10 border-green-500/20 text-green-700 dark:text-green-300">
+                              <CheckCircle className="h-4 w-4" />
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-medium">
+                                {event.data.taskTitle}
+                              </h3>
+                            </div>
+                          </div>
+                          {/* Right side - completion badge and time */}
+                          <div className="flex flex-col items-end gap-1">
+                            <Badge
+                              variant="outline"
+                              className="text-xs bg-green-500/10 text-green-700 dark:text-green-300"
+                            >
+                              ✓ Completed
+                            </Badge>
+                            <div className="text-sm text-muted-foreground">
+                              {formatTime(event.data.completedAt)}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start gap-3">
-                          <div className="p-2 rounded-full bg-green-500/10 border-green-500/20 text-green-700 dark:text-green-300">
-                            <CheckCircle className="h-4 w-4" />
-                          </div>
-                          <div className="flex-1">
-                            <h3 className="font-medium">
-                              {event.data.taskTitle}
-                            </h3>
-                          </div>
-                        </div>
-                        {/* Right side - completion badge and time */}
-                        <div className="flex flex-col items-end gap-1">
-                          <Badge
-                            variant="outline"
-                            className="text-xs bg-green-500/10 text-green-700 dark:text-green-300"
-                          >
-                            ✓ Completed
-                          </Badge>
-                          <div className="text-sm text-muted-foreground">
-                            {formatTime(event.data.completedAt)}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
-          </div>
-        )
-      )}
-    </div>
+          )
+        )}
+      </div>
+
+      {/* Session Details Modal */}
+      <SessionDetailsModal
+        session={selectedSession}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        formatTime={formatTime}
+        formatDuration={formatDuration}
+      />
+    </>
   );
 }

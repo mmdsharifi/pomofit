@@ -1,7 +1,5 @@
 "use client";
 
-import { DialogFooter } from "@/components/ui/dialog";
-
 import type React from "react";
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -12,21 +10,11 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { X, Clock } from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Command, CommandGroup, CommandItem } from "@/components/ui/command";
-import { useLocalStorage } from "@/lib/use-local-storage";
-import * as DialogPrimitive from "@radix-ui/react-dialog";
 
 export interface SessionNoteDialogProps {
   open: boolean;
@@ -47,34 +35,38 @@ export default function SessionNoteDialog({
   const [autoStartRest, setAutoStartRest] = useState(true);
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(60);
-  const [lastInputChange, setLastInputChange] = useState(Date.now());
-  
+
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
+  const autoSkipTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const initialNoteRef = useRef("");
 
-  // Format time for display
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // Handle auto-skip countdown
   const startCountdown = useCallback(() => {
     if (countdownRef.current) {
       clearInterval(countdownRef.current);
     }
-    
+    if (autoSkipTimeoutRef.current) {
+      clearTimeout(autoSkipTimeoutRef.current);
+      autoSkipTimeoutRef.current = null;
+    }
+
     setCountdown(60);
     countdownRef.current = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
-          // Auto-skip when countdown reaches 0
           if (countdownRef.current) {
             clearInterval(countdownRef.current);
             countdownRef.current = null;
           }
-          onSubmit("", [], autoStartRest);
+          autoSkipTimeoutRef.current = window.setTimeout(() => {
+            onSubmit("", [], autoStartRest);
+            autoSkipTimeoutRef.current = null;
+          }, 0);
           return 0;
         }
         return prev - 1;
@@ -82,21 +74,16 @@ export default function SessionNoteDialog({
     }, 1000);
   }, [onSubmit, autoStartRest]);
 
-  // Reset countdown when input changes
   const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
     setNote(newValue);
-    setLastInputChange(Date.now());
-    
-    // Reset countdown if input has changed from initial state
+
     if (newValue !== initialNoteRef.current) {
       startCountdown();
     }
   };
 
-  // Handle keyboard shortcuts
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux) to save
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
       e.preventDefault();
       handleSubmit();
@@ -117,11 +104,8 @@ export default function SessionNoteDialog({
         }),
       });
       const data = await res.json();
-      tags = data.tags || [];
-      if (!Array.isArray(tags)) {
-        tags = [];
-      }
-    } catch (e) {
+      tags = Array.isArray(data.tags) ? data.tags : [];
+    } catch {
       tags = [];
     }
     setLoading(false);
@@ -129,22 +113,20 @@ export default function SessionNoteDialog({
     setNote("");
   };
 
-  // Handle dialog open/close
   useEffect(() => {
     if (open) {
-      // Initialize the dialog
       setNote("");
       setCountdown(60);
-      setLastInputChange(Date.now());
       initialNoteRef.current = "";
-      
-      // Start countdown
       startCountdown();
     } else {
-      // Clean up countdown when dialog closes
       if (countdownRef.current) {
         clearInterval(countdownRef.current);
         countdownRef.current = null;
+      }
+      if (autoSkipTimeoutRef.current) {
+        clearTimeout(autoSkipTimeoutRef.current);
+        autoSkipTimeoutRef.current = null;
       }
     }
 
@@ -153,15 +135,22 @@ export default function SessionNoteDialog({
         clearInterval(countdownRef.current);
         countdownRef.current = null;
       }
+      if (autoSkipTimeoutRef.current) {
+        clearTimeout(autoSkipTimeoutRef.current);
+        autoSkipTimeoutRef.current = null;
+      }
     };
   }, [open, startCountdown]);
 
-  // Clean up on unmount
   useEffect(() => {
     return () => {
       if (countdownRef.current) {
         clearInterval(countdownRef.current);
         countdownRef.current = null;
+      }
+      if (autoSkipTimeoutRef.current) {
+        clearTimeout(autoSkipTimeoutRef.current);
+        autoSkipTimeoutRef.current = null;
       }
     };
   }, []);
@@ -215,7 +204,10 @@ export default function SessionNoteDialog({
           </Button>
         </DialogFooter>
         <div className="text-xs text-muted-foreground text-center mt-2">
-          Press <kbd className="px-1 py-0.5 bg-muted rounded text-xs">⌘</kbd> + <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Enter</kbd> to save
+          Press{" "}
+          <kbd className="px-1 py-0.5 bg-muted rounded text-xs">⌘</kbd> +{" "}
+          <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Enter</kbd> to
+          save
         </div>
       </DialogContent>
     </Dialog>

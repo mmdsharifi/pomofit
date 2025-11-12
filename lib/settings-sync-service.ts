@@ -6,6 +6,13 @@ import { useState, useCallback } from "react"
 import { useToast } from "@/components/ui/use-toast"
 import { useSyncQueue, useOnlineStatus } from "@/lib/sync-utils"
 import { isSupabaseConfigured } from "@/lib/supabase-utils"
+import {
+  defaultFitOnWorkouts,
+  defaultWorkoutSources,
+  ensureWorkoutSources,
+  type FitOnWorkout,
+  type WorkoutSources,
+} from "@/lib/fiton-data"
 
 // Define settings type
 export type UserSettings = {
@@ -14,12 +21,15 @@ export type UserSettings = {
   longBreakTime: number
   pomodoroGoal: number
   workoutGifs: string[]
+  workoutSources: WorkoutSources
+  fitonWorkouts: FitOnWorkout[]
   autoStartBreaks?: boolean
   autoStartPomodoros?: boolean
   longBreakInterval?: number
   alarmSound?: string
   alarmVolume?: number
   darkMode?: boolean
+  devModeFastTimers?: boolean
 }
 
 export function useSettingsSync() {
@@ -40,6 +50,13 @@ export function useSettingsSync() {
       longBreakTime: settings.long_break_time,
       pomodoroGoal: settings.pomodoro_goal,
       workoutGifs: settings.workout_gifs,
+      workoutSources: ensureWorkoutSources(
+        settings.workout_sources ?? defaultWorkoutSources,
+      ),
+      fitonWorkouts:
+        Array.isArray(settings.fiton_workouts) && settings.fiton_workouts.length > 0
+          ? settings.fiton_workouts
+          : [...defaultFitOnWorkouts],
       autoStartBreaks: settings.auto_start_breaks,
       autoStartPomodoros: settings.auto_start_pomodoros,
       longBreakInterval: settings.long_break_interval,
@@ -57,6 +74,8 @@ export function useSettingsSync() {
       long_break_time: settings.longBreakTime,
       pomodoro_goal: settings.pomodoroGoal,
       workout_gifs: settings.workoutGifs,
+      workout_sources: ensureWorkoutSources(settings.workoutSources),
+      fiton_workouts: settings.fitonWorkouts ?? [],
       auto_start_breaks: settings.autoStartBreaks,
       auto_start_pomodoros: settings.autoStartPomodoros,
       long_break_interval: settings.longBreakInterval,

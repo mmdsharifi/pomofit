@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { workoutGifs } from "@/lib/workout-data";
 import { type TimerMode, useTimer } from "@/lib/timer-context";
 import { Player } from "@lottiefiles/react-lottie-player";
@@ -19,20 +19,36 @@ export default function WorkoutDisplay({
   const { settings } = useTimer();
   const [currentWorkout, setCurrentWorkout] = useState<string | null>(null);
   const [lottieError, setLottieError] = useState(false);
-  const playerRef = useRef<Player>(null);
+
+  const lottieEnabled = settings.workoutSources?.lottie ?? true;
+
+  const availableWorkoutIds = useMemo(() => {
+    return settings.workoutGifs.filter((id) =>
+      workoutGifs.some((workout) => workout.id === id)
+    );
+  }, [settings.workoutGifs]);
 
   useEffect(() => {
-    if (isActive && settings.workoutGifs.length > 0) {
+    if (isActive && lottieEnabled && availableWorkoutIds.length > 0) {
       // Select a random workout from the available options
-      const randomIndex = Math.floor(
-        Math.random() * settings.workoutGifs.length
-      );
-      setCurrentWorkout(settings.workoutGifs[randomIndex]);
+      const randomIndex = Math.floor(Math.random() * availableWorkoutIds.length);
+      setCurrentWorkout(availableWorkoutIds[randomIndex]);
       setLottieError(false); // Reset error state when changing workouts
     } else {
       setCurrentWorkout(null);
     }
-  }, [isActive, settings.workoutGifs]);
+  }, [isActive, lottieEnabled, availableWorkoutIds]);
+
+  if (!lottieEnabled) {
+    return (
+      <div className="w-full max-w-md text-center">
+        <p className="text-lg font-medium">Lottie workouts disabled</p>
+        <p className="text-sm text-muted-foreground">
+          Enable Lottie workouts in Settings to see animations during breaks.
+        </p>
+      </div>
+    );
+  }
 
   if (!isActive || !currentWorkout) {
     return (
@@ -50,8 +66,10 @@ export default function WorkoutDisplay({
   if (!workout) {
     return (
       <div className="w-full max-w-md text-center">
-        <p className="text-lg font-medium">Workout</p>
-        <p className="text-sm text-muted-foreground">{currentWorkout}</p>
+        <p className="text-lg font-medium">No workouts selected</p>
+        <p className="text-sm text-muted-foreground">
+          Update your workout list in Settings to keep this break fresh.
+        </p>
       </div>
     );
   }

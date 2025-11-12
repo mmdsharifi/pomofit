@@ -15,10 +15,11 @@ import { useToast } from "@/components/ui/use-toast";
 import { getHistoryByDate, useHistory } from "@/lib/history-utils";
 import { sendTimerNotification } from "@/lib/notification-service";
 import { useLocalStorage } from "@/lib/use-local-storage";
-import { useSettingsSync } from "@/lib/settings-sync-service";
+import { useSettingsSync, type UserSettings } from "@/lib/settings-sync-service";
 import { useAuth } from "@/lib/auth-context";
 // Import task context directly
 import { useTasks as useTasksHook } from "@/lib/task-context";
+import { defaultFitOnWorkouts, defaultWorkoutSources } from "@/lib/fiton-data";
 
 export type TimerMode = "pomodoro" | "shortBreak" | "longBreak";
 
@@ -41,13 +42,7 @@ interface TimerContextType {
     tags: string[],
     autoStartRest?: boolean
   ) => void;
-  settings: {
-    pomodoroTime: number;
-    shortBreakTime: number;
-    longBreakTime: number;
-    pomodoroGoal: number;
-    workoutGifs: string[];
-  };
+  settings: UserSettings;
   playConfetti: boolean;
   setPlayConfetti: (play: boolean) => void;
   getRandomMotivationalMessage: () => string;
@@ -183,7 +178,13 @@ function TimerProviderInner({
     longBreakTime: 15,
     pomodoroGoal: 8,
     workoutGifs: ["pushups", "squats", "lunges", "jumping-jacks", "plank"],
+    workoutSources: { ...defaultWorkoutSources },
+    fitonWorkouts: [...defaultFitOnWorkouts],
+    devModeFastTimers: false,
   });
+  const isDevEnvironment = process.env.NODE_ENV === "development";
+  const devFastTimersEnabled =
+    isDevEnvironment && settings.devModeFastTimers === true;
 
   // Get settings sync functions
   const { initialSync: syncSettings, updateSettings } = useSettingsSync();
@@ -202,7 +203,9 @@ function TimerProviderInner({
   }, [user, syncSettings, settings, setSettings]);
 
   const [mode, setMode] = useState<TimerMode>("pomodoro");
-  const [timeLeft, setTimeLeft] = useState(settings.pomodoroTime * 60);
+  const [timeLeft, setTimeLeft] = useState(() =>
+    devFastTimersEnabled ? 5 : settings.pomodoroTime * 60
+  );
   const [isRunning, setIsRunning] = useState(false);
   const [showNoteDialog, setShowNoteDialog] = useState(false);
   const [showGoalReachedModal, setShowGoalReachedModal] = useState(false);
@@ -286,6 +289,9 @@ function TimerProviderInner({
   // Calculate total time based on current mode
   const getTotalTime = useCallback(
     (timerMode: TimerMode) => {
+      if (devFastTimersEnabled) {
+        return 5;
+      }
       switch (timerMode) {
         case "pomodoro":
           return settings.pomodoroTime * 60;
@@ -295,7 +301,12 @@ function TimerProviderInner({
           return settings.longBreakTime * 60;
       }
     },
-    [settings.pomodoroTime, settings.shortBreakTime, settings.longBreakTime]
+    [
+      settings.pomodoroTime,
+      settings.shortBreakTime,
+      settings.longBreakTime,
+      devFastTimersEnabled,
+    ]
   );
 
   // Reset timer when mode changes or settings change
@@ -596,7 +607,10 @@ function TimerProviderInner({
     // Add the session to history with sync
     addSession(session);
 
-    setShowNoteDialog(false);
+    // Defer closing the dialog to avoid setState during render
+    requestAnimationFrame(() => {
+      setShowNoteDialog(false);
+    });
 
     // Start the next session if autoStartRest is enabled
     if (autoStartRest && nextModeRef.current) {

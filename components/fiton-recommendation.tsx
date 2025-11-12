@@ -30,6 +30,10 @@ export default function FitOnRecommendation({
   className,
 }: FitOnRecommendationProps) {
   const isOnline = useOnlineStatus();
+  // If no workouts configured at all, render nothing (test expectation)
+  if (!workouts || workouts.length === 0) {
+    return null;
+  }
 
   const moodMap = useMemo(() => {
     const map = new Map<FitOnMoodId, FitOnWorkout[]>();
@@ -65,7 +69,10 @@ export default function FitOnRecommendation({
         const next = updater(prev);
         if (typeof window !== "undefined") {
           try {
-            window.localStorage.setItem("fiton-mood-stats", JSON.stringify(next));
+            window.localStorage.setItem(
+              "fiton-mood-stats",
+              JSON.stringify(next)
+            );
           } catch {
             // noop
           }
@@ -117,16 +124,19 @@ export default function FitOnRecommendation({
   const [lottieError, setLottieError] = useState(false);
 
   // Simple local analytics to measure interactions
-  const logEvent = useCallback((type: string, payload?: Record<string, any>) => {
-    if (typeof window === "undefined") return;
-    try {
-      const key = "fiton-analytics";
-      const current = JSON.parse(window.localStorage.getItem(key) || "[]");
-      const entry = { type, ts: Date.now(), ...(payload || {}) };
-      const next = [entry, ...current].slice(0, 200);
-      window.localStorage.setItem(key, JSON.stringify(next));
-    } catch {}
-  }, []);
+  const logEvent = useCallback(
+    (type: string, payload?: Record<string, any>) => {
+      if (typeof window === "undefined") return;
+      try {
+        const key = "fiton-analytics";
+        const current = JSON.parse(window.localStorage.getItem(key) || "[]");
+        const entry = { type, ts: Date.now(), ...(payload || {}) };
+        const next = [entry, ...current].slice(0, 200);
+        window.localStorage.setItem(key, JSON.stringify(next));
+      } catch {}
+    },
+    []
+  );
 
   useEffect(() => {
     if (availableMoods.length === 0) {
@@ -196,9 +206,12 @@ export default function FitOnRecommendation({
       setPrefetchQueue([]);
       return;
     }
-    const initialQueue = buildQueue(selectedMood, null);
-    const nextId = initialQueue.shift() ?? null;
-    setSelectedWorkoutId(nextId);
+    const candidates = moodMap.get(selectedMood) ?? [];
+    // Deterministic initial pick: first candidate in provided order
+    const initialId = candidates[0]?.id ?? null;
+    setSelectedWorkoutId(initialId);
+    // Prepare a shuffled prefetch queue excluding the initially selected id
+    const initialQueue = buildQueue(selectedMood, initialId);
     setPrefetchQueue(initialQueue);
   }, [selectedMood, buildQueue]);
 
@@ -211,23 +224,9 @@ export default function FitOnRecommendation({
   const currentMoodCount =
     (selectedMood && moodMap.get(selectedMood)?.length) ?? 0;
 
-  // Empty state when no workouts available at all
+  // Empty state when no moods are available (should not happen if workouts exist)
   if (availableMoods.length === 0) {
-    return (
-      <div
-        className={cn(
-          "w-full max-w-md space-y-4 rounded-lg border p-4 bg-card/60 shadow-sm",
-          className
-        )}
-      >
-        <p className="text-sm font-medium">Break suggestion</p>
-        <div className="text-sm text-muted-foreground">
-          No workouts are configured yet. Try adding FitOn links in Settings, or
-          use built-in stretches below.
-        </div>
-        <OfflineStretch isOnline={false} />
-      </div>
-    );
+    return null;
   }
 
   // If the chosen mood has no workouts, show a friendly empty state
@@ -236,10 +235,17 @@ export default function FitOnRecommendation({
       <div className="flex items-center justify-between">
         <span>Try another mood</span>
         <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" onClick={() => setSelectedMood(availableMoods[0]?.id ?? null)}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setSelectedMood(availableMoods[0]?.id ?? null)}
+          >
             Switch mood
           </Button>
-          <Button size="sm" onClick={() => pickRandomWorkout(availableMoods[0]?.id ?? null)}>
+          <Button
+            size="sm"
+            onClick={() => pickRandomWorkout(availableMoods[0]?.id ?? null)}
+          >
             Shuffle all moods
           </Button>
         </div>
@@ -271,10 +277,7 @@ export default function FitOnRecommendation({
               variant={isSelected ? "default" : "outline"}
               aria-pressed={isSelected}
               aria-label={mood.label}
-              className={cn(
-                "min-w-10 justify-center",
-                !isSelected && "px-3"
-              )}
+              className={cn("min-w-10 justify-center", !isSelected && "px-3")}
               onClick={() => {
                 setSelectedMood(mood.id);
                 persistMoodStats((s) => ({
@@ -367,7 +370,12 @@ export default function FitOnRecommendation({
           </div>
         )
       ) : (
-        <OfflineStretch isOnline={false} lottieRef={lottieRef} lottieError={lottieError} setLottieError={setLottieError} />
+        <OfflineStretch
+          isOnline={false}
+          lottieRef={lottieRef}
+          lottieError={lottieError}
+          setLottieError={setLottieError}
+        />
       )}
     </div>
   );
@@ -402,7 +410,8 @@ function OfflineStretch({
               background="transparent"
               style={{ width: "100%", height: "100%" }}
               onEvent={(ev) => {
-                if (ev === PlayerEvent.Error && setLottieError) setLottieError(true);
+                if (ev === PlayerEvent.Error && setLottieError)
+                  setLottieError(true);
               }}
             />
           </div>
@@ -410,9 +419,9 @@ function OfflineStretch({
         <div className="flex-1">
           <p className="font-medium text-sm">Stretch guidance</p>
           <p className="text-xs text-muted-foreground">
-            You appear to be offline. Try this quick posture reset: roll shoulders
-            5×, neck side-stretches 2× each, 20-second chest opener. When you’re
-            back online, open a FitOn workout.
+            You appear to be offline. Try this quick posture reset: roll
+            shoulders 5×, neck side-stretches 2× each, 20-second chest opener.
+            When you’re back online, open a FitOn workout.
           </p>
         </div>
       </div>

@@ -70,7 +70,7 @@ describe("VersionDisplay", () => {
       const container = screen
         .getByText("v1.2.3 (Jan 15, 2024, 10:30 AM)")
         .closest("div");
-      const outerContainer = container?.parentElement;
+      const outerContainer = container?.parentElement?.parentElement;
       expect(outerContainer).toHaveClass(
         "p-2",
         "text-xs",
@@ -89,7 +89,7 @@ describe("VersionDisplay", () => {
     await waitFor(() => {
       const flexContainer = screen
         .getByText("v1.2.3 (Jan 15, 2024, 10:30 AM)")
-        .closest(".flex");
+        .closest(".flex.items-center.justify-between");
       expect(flexContainer).toHaveClass(
         "flex",
         "items-center",
@@ -144,7 +144,7 @@ describe("VersionDisplay", () => {
       // Check for proper flex layout - find it directly
       const flexContainer = screen
         .getByText("v1.2.3 (Jan 15, 2024, 10:30 AM)")
-        .closest(".flex");
+        .closest(".flex.items-center.justify-between");
       expect(flexContainer).toBeInTheDocument();
       expect(flexContainer).toHaveClass(
         "flex",

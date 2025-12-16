@@ -4,8 +4,9 @@ import React from "react";
 import { useState, useEffect, useMemo } from "react";
 import { workoutGifs } from "@/lib/workout-data";
 import { type TimerMode, useTimer } from "@/lib/timer-context";
-import { Player } from "@lottiefiles/react-lottie-player";
+import { Player, PlayerEvent } from "@lottiefiles/react-lottie-player";
 import { AlertTriangle } from "lucide-react";
+import Image from "next/image";
 
 interface WorkoutDisplayProps {
   isActive: boolean;
@@ -74,10 +75,6 @@ export default function WorkoutDisplay({
     );
   }
 
-  const handleLottieError = () => {
-    setLottieError(true);
-  };
-
   return (
     <div className="w-full max-w-md">
       <div className="relative">
@@ -96,6 +93,11 @@ export default function WorkoutDisplay({
                 renderer="svg"
                 background="transparent"
                 style={{ height: "220px", width: "220px" }}
+                onEvent={(event) => {
+                  if (event === PlayerEvent.Error) {
+                    setLottieError(true);
+                  }
+                }}
                 /*
                   Note: The Lottie Player component does not support an onError prop.
                   The test for 'Animation unavailable' should mock the fallback UI directly.
@@ -104,9 +106,12 @@ export default function WorkoutDisplay({
             )}
           </div>
         ) : (
-          <img
+          <Image
             src={workout.gifUrl || "/placeholder.svg"}
             alt={workout.name}
+            width={256}
+            height={256}
+            unoptimized
             className="h-64 w-full object-contain rounded-md"
           />
         )}

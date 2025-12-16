@@ -12,7 +12,7 @@ import {
   type ReactNode,
 } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { getHistoryByDate, useHistory } from "@/lib/history-utils";
+import { getHistoryByDate, useHistory, countTodaysPomodoroSessions } from "@/lib/history-utils";
 import { sendTimerNotification } from "@/lib/notification-service";
 import { useLocalStorage } from "@/lib/use-local-storage";
 import { useSettingsSync, type UserSettings } from "@/lib/settings-sync-service";
@@ -54,10 +54,10 @@ const TimerContext = createContext<TimerContextType | undefined>(undefined);
 
 // Import audio functions
 import {
-  playStartSound as playStartSoundUtil,
+  playStartSound,
   playEndSound as playEndSoundUtil,
-  playBreakStartSound as playBreakStartSoundUtil,
-  playBreakEndSound as playBreakEndSoundUtil,
+  playBreakStartSound,
+  playBreakEndSound,
 } from "./audio-player";
 import {
   REST_MOTIVATIONAL_MESSAGES,
@@ -108,7 +108,10 @@ function TimerProviderInner({
     if (user) {
       syncSettings(settings)
         .then((syncedSettings) => {
-          setSettings(syncedSettings);
+          setSettings({
+            ...syncedSettings,
+            devModeFastTimers: syncedSettings.devModeFastTimers ?? settings.devModeFastTimers ?? false,
+          });
         })
         .catch((error) => {
           console.error("Error syncing settings:", error);

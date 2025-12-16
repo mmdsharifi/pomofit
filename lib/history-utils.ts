@@ -234,6 +234,13 @@ export function getHistoryByDate(date: Date): PomodoroSession[] {
   });
 }
 
+// Get count of today's pomodoro sessions
+export function countTodaysPomodoroSessions(): number {
+  const today = new Date();
+  const sessions = getHistoryByDate(today);
+  return sessions.filter(session => session.mode === "pomodoro").length;
+}
+
 // Get task completions
 export function getTaskCompletions(): TaskCompletionEvent[] {
   const completions = safeLocalStorage.getItem("pomofit-task-completions");

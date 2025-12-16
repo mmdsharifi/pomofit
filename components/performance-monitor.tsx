@@ -2,6 +2,11 @@
 
 import { useEffect } from "react";
 
+interface LayoutShift extends PerformanceEntry {
+  value: number;
+  hadRecentInput: boolean;
+}
+
 export default function PerformanceMonitor() {
   useEffect(() => {
     // Monitor Core Web Vitals

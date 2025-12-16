@@ -6,6 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Download, X } from "lucide-react";
 import { isPWAInstalled } from "@/lib/register-sw";
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+}
+
 const STORAGE_KEY = "pwa-prompt-dismissed";
 
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
@@ -86,7 +91,7 @@ export default function PWAInstallPrompt() {
 
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e);
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
       setShowInstallPrompt(true);
     };
 

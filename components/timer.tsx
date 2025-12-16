@@ -53,7 +53,7 @@ export default function Timer() {
   const prevModeRef = useRef(mode);
   const sessionIdRef = useRef("");
 
-  // Use a ref to track if we've already incremented the pomodoro count
+  // Use a ref to track if we have already incremented the pomodoro count
   const hasIncrementedPomodoroRef = useRef(false);
 
   const [showResetConfirmation, setShowResetConfirmation] = useState(false);

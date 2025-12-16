@@ -50,7 +50,10 @@ describe("PWAInstallPrompt", () => {
     act(() => {
       fireEvent.click(screen.getByLabelText(/close prompt/i));
     });
-    expect(setItemMock).toHaveBeenCalledWith(
+    const storageSetItem = (
+      window.localStorage as unknown as { setItem: jest.Mock }
+    ).setItem;
+    expect(storageSetItem).toHaveBeenCalledWith(
       "pwa-prompt-dismissed",
       expect.any(String)
     );

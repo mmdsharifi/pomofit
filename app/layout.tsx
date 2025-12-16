@@ -6,6 +6,7 @@ import { Spline_Sans_Mono, Spline_Sans } from "next/font/google";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/lib/theme-context";
 import { TaskProvider } from "@/lib/task-context";
+import { TimerProvider } from "@/lib/timer-context";
 import { AuthProvider } from "@/lib/auth-context";
 import PerformanceMonitor from "@/components/performance-monitor";
 import ChunkRecovery from "@/components/chunk-recovery";
@@ -188,11 +189,13 @@ export default function RootLayout({
           <AuthProvider>
             <ThemeProvider>
               <TaskProvider>
-                {children}
-                <Toaster />
-                <ChunkRecovery />
-                <PerformanceMonitor />
-                <Analytics />
+                <TimerProvider>
+                  {children}
+                  <Toaster />
+                  <ChunkRecovery />
+                  <PerformanceMonitor />
+                  <Analytics />
+                </TimerProvider>
               </TaskProvider>
             </ThemeProvider>
           </AuthProvider>

@@ -188,6 +188,17 @@ export default function SettingsClient() {
     return fitOnMoods.filter((mood) => moodSet.has(mood.id));
   }, [fitonWorkouts]);
 
+  const groupedWorkouts = useMemo(() => {
+    const groups: Record<string, FitOnWorkout[]> = {};
+    fitonWorkouts.forEach((workout) => {
+      if (!groups[workout.mood]) {
+        groups[workout.mood] = [];
+      }
+      groups[workout.mood].push(workout);
+    });
+    return groups;
+  }, [fitonWorkouts]);
+
   const pickRandomPreview = useCallback(
     (mood: FitOnMoodId | null) => {
       if (!mood) {

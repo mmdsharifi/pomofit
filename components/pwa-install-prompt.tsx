@@ -6,69 +6,121 @@ import { Button } from "@/components/ui/button";
 import { Download, X } from "lucide-react";
 import { isPWAInstalled } from "@/lib/register-sw";
 
+const STORAGE_KEY = "pwa-prompt-dismissed";
+
+type StorageLike = Pick<Storage, "getItem" | "setItem">;
+
+type GlobalWithStorage = typeof globalThis & {
+  localStorage?: StorageLike | null;
+};
+
+type WindowWithDescriptor = Window & {
+  localStorage?: StorageLike;
+};
+
+const getWindowStorage = (): StorageLike | null => {
+  if (typeof window !== "undefined" && window.localStorage) {
+    return window.localStorage as StorageLike;
+  }
+  return null;
+};
+
+const getGlobalStorage = (): StorageLike | null => {
+  if (typeof globalThis === "undefined") return null;
+  const store = (globalThis as GlobalWithStorage).localStorage;
+  return store ?? null;
+};
+
+const getDescriptorStorage = (): StorageLike | null => {
+  if (typeof window === "undefined") return null;
+  const descriptor = Object.getOwnPropertyDescriptor(
+    window as WindowWithDescriptor,
+    "localStorage"
+  );
+  const candidate = descriptor?.value as StorageLike | undefined;
+  if (candidate && typeof candidate.setItem === "function") {
+    return candidate;
+  }
+  return null;
+};
+
+const readDismissedAt = () =>
+  getWindowStorage()?.getItem(STORAGE_KEY) ??
+  getGlobalStorage()?.getItem(STORAGE_KEY) ??
+  getDescriptorStorage()?.getItem(STORAGE_KEY) ??
+  null;
+
+const writeDismissedFlag = () => {
+  const value = Date.now().toString();
+  const seen = new Set<StorageLike>();
+  [getWindowStorage(), getGlobalStorage(), getDescriptorStorage()].forEach(
+    (store) => {
+      if (!store || seen.has(store)) return;
+      seen.add(store);
+      store.setItem(STORAGE_KEY, value);
+    }
+  );
+};
+
 export default function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    // Check if already installed
+    if (typeof window === "undefined") {
+      return;
+    }
+
     if (isPWAInstalled()) {
       return;
     }
 
-    // Check if user previously dismissed the prompt
-    const promptDismissed = localStorage.getItem("pwa-prompt-dismissed");
+    const promptDismissed = readDismissedAt();
     if (
       promptDismissed &&
       Date.now() - Number.parseInt(promptDismissed) < 7 * 24 * 60 * 60 * 1000
     ) {
-      // If dismissed less than a week ago, don't show again
       return;
     }
 
     const handleBeforeInstallPrompt = (e: Event) => {
-      // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
-      // Stash the event so it can be triggered later
       setDeferredPrompt(e);
-      // Show the install button
       setShowInstallPrompt(true);
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
-    // Handle app installed event
-    window.addEventListener("appinstalled", () => {
+    const handleAppInstalled = () => {
       console.log("PWA was installed");
       setShowInstallPrompt(false);
       setDeferredPrompt(null);
-    });
+    };
+
+    window.addEventListener("appinstalled", handleAppInstalled);
 
     return () => {
       window.removeEventListener(
         "beforeinstallprompt",
         handleBeforeInstallPrompt
       );
+      window.removeEventListener("appinstalled", handleAppInstalled);
     };
   }, []);
 
   const handleInstallClick = () => {
     if (!deferredPrompt) return;
 
-    // Show the install prompt
     deferredPrompt.prompt();
 
-    // Wait for the user to respond to the prompt
     deferredPrompt.userChoice.then((choiceResult: { outcome: string }) => {
       if (choiceResult.outcome === "accepted") {
         console.log("User accepted the install prompt");
       } else {
         console.log("User dismissed the install prompt");
-        // Remember that user dismissed the prompt
-        localStorage.setItem("pwa-prompt-dismissed", Date.now().toString());
+        writeDismissedFlag();
       }
-      // Clear the saved prompt since it can't be used again
       setDeferredPrompt(null);
       setShowInstallPrompt(false);
     });
@@ -77,8 +129,7 @@ export default function PWAInstallPrompt() {
   const handleDismiss = () => {
     setDismissed(true);
     setShowInstallPrompt(false);
-    // Remember that user dismissed the prompt
-    localStorage.setItem("pwa-prompt-dismissed", Date.now().toString());
+    writeDismissedFlag();
   };
 
   if (!showInstallPrompt || dismissed) return null;

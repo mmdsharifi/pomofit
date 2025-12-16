@@ -10,9 +10,21 @@ const Dialog = DialogPrimitive.Root
 
 const DialogTrigger = DialogPrimitive.Trigger
 
-// Remove the backdrop overlay by setting it to transparent
-const DialogPortal = ({ className, ...props }: DialogPrimitive.DialogPortalProps) => (
-  <DialogPrimitive.Portal className={cn(className)} {...props} />
+const DialogPortal = ({
+  className,
+  children,
+  ...props
+}: DialogPrimitive.DialogPortalProps) => (
+  <DialogPrimitive.Portal {...props}>
+    <div
+      className={cn(
+        "fixed inset-0 z-50 flex items-start justify-center sm:items-center",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  </DialogPrimitive.Portal>
 )
 DialogPortal.displayName = DialogPrimitive.Portal.displayName
 
@@ -23,7 +35,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-transparent", // Changed from bg-background/80 to bg-transparent
+      "fixed inset-0 z-50 bg-background/80 backdrop-blur-sm",
       className,
     )}
     {...props}

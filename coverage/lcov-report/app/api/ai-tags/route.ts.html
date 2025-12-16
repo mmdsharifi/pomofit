@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">80% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/15</span>
+                <span class='fraction'>12/15</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">75% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/4</span>
+                <span class='fraction'>3/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">85.71% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/14</span>
+                <span class='fraction'>12/14</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -111,35 +111,35 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -153,21 +153,21 @@
 import { generateText } from "ai";
 import { groq } from "@ai-sdk/groq";
 &nbsp;
-export async function <span class="fstat-no" title="function not covered" >POST(</span>request: NextRequest) {
-<span class="cstat-no" title="statement not covered" >  try {</span>
-    const { title, note, sessionNumber } = <span class="cstat-no" title="statement not covered" >await request.json();</span>
+export async function POST(request: NextRequest) {
+  try {
+    const { title, note, sessionNumber } = await request.json();
 &nbsp;
     // Check if API key is available
-<span class="cstat-no" title="statement not covered" >    if (!process.env.GROQ_API_KEY) {</span>
-<span class="cstat-no" title="statement not covered" >      return NextResponse.json({</span>
+    if (!process.env.GROQ_API_KEY) {
+      return NextResponse.json({
         success: false,
         error: "AI features are not available - API key not configured",
         tags: ["untagged"],
       });
     }
 &nbsp;
-    const prompt = <span class="cstat-no" title="statement not covered" >`Given the following session information, generate 3-5 relevant, short tags (single words or short phrases, no #) as a JSON array. Only return the array, nothing else.\nTitle: ${title}\nNote: ${note}\nSession Number: ${sessionNumber}`;</span>
-    const { text } = <span class="cstat-no" title="statement not covered" >await generateText({</span>
+    const prompt = `Given the following session information, generate 3-5 relevant, short tags (single words or short phrases, no #) as a JSON array. Only return the array, nothing else.\nTitle: ${title}\nNote: ${note}\nSession Number: ${sessionNumber}`;
+    const { text } = await generateText({
       model: groq("llama-3.1-8b-instant"),
       system:
         "You are a helpful assistant that only returns a JSON array of tags.",
@@ -175,14 +175,14 @@ export async function <span class="fstat-no" title="function not covered" >POST(
       maxTokens: 60,
     });
     // Try to parse the tags from the response
-    let tags: string[] = <span class="cstat-no" title="statement not covered" >[];</span>
-<span class="cstat-no" title="statement not covered" >    try {</span>
-<span class="cstat-no" title="statement not covered" >      tags = JSON.parse(text.trim());</span>
-<span class="cstat-no" title="statement not covered" >      if (!Array.isArray(tags)) <span class="cstat-no" title="statement not covered" >tags = ["untagged"];</span></span>
+    let tags: string[] = [];
+    try {
+      tags = JSON.parse(text.trim());
+      <span class="missing-if-branch" title="if path not taken" >I</span>if (!Array.isArray(tags)) <span class="cstat-no" title="statement not covered" >tags = ["untagged"];</span>
     } catch {
-<span class="cstat-no" title="statement not covered" >      tags = ["untagged"];</span>
+      tags = ["untagged"];
     }
-<span class="cstat-no" title="statement not covered" >    return NextResponse.json({ success: true, tags });</span>
+    return NextResponse.json({ success: true, tags });
   } catch (error) {
 <span class="cstat-no" title="statement not covered" >    console.error("Error in ai-tags API:", error);</span>
 <span class="cstat-no" title="statement not covered" >    return NextResponse.json({</span>
@@ -199,7 +199,7 @@ export async function <span class="fstat-no" title="function not covered" >POST(
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-07-16T11:43:23.084Z
+                at 2025-12-16T18:44:20.151Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

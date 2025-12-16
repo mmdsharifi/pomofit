@@ -29,9 +29,20 @@ describe("useTimer Hook", () => {
     jest.useFakeTimers();
     jest.clearAllMocks();
     localStorage.clear();
-    audioMock = jest.fn().mockImplementation(() => ({ play: jest.fn() }));
-    (global as any).Audio = audioMock;
+    
+    // Mock Audio constructor
+    audioMock = jest.fn().mockImplementation(() => ({
+      play: jest.fn().mockResolvedValue(undefined),
+      pause: jest.fn(),
+      currentTime: 0,
+    }));
+    
+    // Assign to both global and window to ensure it's picked up
+    global.Audio = audioMock;
+    // @ts-ignore
+    window.Audio = audioMock;
   });
+
 
   afterEach(() => {
     jest.useRealTimers();

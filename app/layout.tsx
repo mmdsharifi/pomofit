@@ -1,13 +1,17 @@
+
 import type React from "react";
+import { Analytics } from "@vercel/analytics/react";
 import "@/styles/globals.css";
 import { Spline_Sans_Mono, Spline_Sans } from "next/font/google";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/lib/theme-context";
 import { TaskProvider } from "@/lib/task-context";
+import { TimerProvider } from "@/lib/timer-context";
 import { AuthProvider } from "@/lib/auth-context";
 import PerformanceMonitor from "@/components/performance-monitor";
 import ChunkRecovery from "@/components/chunk-recovery";
 import { ErrorBoundary } from "@/components/error-boundary";
+
 
 // Load fonts with optimized settings for performance
 const splineSans = Spline_Sans({
@@ -185,10 +189,13 @@ export default function RootLayout({
           <AuthProvider>
             <ThemeProvider>
               <TaskProvider>
-                {children}
-                <Toaster />
-                <ChunkRecovery />
-                <PerformanceMonitor />
+                <TimerProvider>
+                  {children}
+                  <Toaster />
+                  <ChunkRecovery />
+                  <PerformanceMonitor />
+                  <Analytics />
+                </TimerProvider>
               </TaskProvider>
             </ThemeProvider>
           </AuthProvider>

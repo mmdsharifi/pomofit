@@ -6,23 +6,17 @@ import { useCallback, useMemo, useRef } from "react";
  * @param deps - Dependencies array
  * @returns A memoized version of the callback
  */
-export function useMemoizedCallback<T extends (...args: any[]) => any>(
+export function useMemoizedCallback<T extends (...args: unknown[]) => unknown>(
   callback: T,
-  deps: any[]
+  deps: ReadonlyArray<unknown>
 ): T {
-  const depsRef = useRef(deps);
   const callbackRef = useRef(callback);
 
-  // Update refs
   callbackRef.current = callback;
-  depsRef.current = deps;
 
-  return useCallback(
-    ((...args: Parameters<T>) => {
-      return callbackRef.current(...args);
-    }) as T,
-    deps
-  );
+  return useCallback((...args: Parameters<T>) => {
+    return callbackRef.current(...args);
+  }, deps) as T;
 }
 
 /**
@@ -31,7 +25,10 @@ export function useMemoizedCallback<T extends (...args: any[]) => any>(
  * @param deps - Dependencies array
  * @returns The memoized value
  */
-export function useMemoizedValue<T>(factory: () => T, deps: any[]): T {
+export function useMemoizedValue<T>(
+  factory: () => T,
+  deps: ReadonlyArray<unknown>
+): T {
   return useMemo(factory, deps);
 }
 
@@ -40,6 +37,19 @@ export function useMemoizedValue<T>(factory: () => T, deps: any[]): T {
  * @param obj - The object to memoize
  * @returns The memoized object
  */
-export function useMemoizedObject<T extends object>(obj: T): T {
-  return useMemo(() => obj, Object.values(obj));
+export function useMemoizedObject<T extends Record<string, unknown>>(obj: T): T {
+  const valueRef = useRef(obj);
+  const keysRef = useRef(Object.keys(obj));
+
+  const keys = Object.keys(obj);
+  const hasChanged =
+    keysRef.current.length !== keys.length ||
+    keys.some((key) => valueRef.current[key as keyof T] !== obj[key as keyof T]);
+
+  if (hasChanged) {
+    valueRef.current = obj;
+    keysRef.current = keys;
+  }
+
+  return valueRef.current;
 }

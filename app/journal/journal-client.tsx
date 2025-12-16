@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { JournalCalendar } from "@/components/journal/journal-calendar";
 import { JournalEditor } from "@/components/journal/journal-editor";
 import { JournalChat } from "@/components/journal/journal-chat";
@@ -43,14 +43,41 @@ export default function JournalClient() {
     const savedJournals = localStorage.getItem("pomofit-journals");
     if (savedJournals) {
       try {
-        const parsed = JSON.parse(savedJournals);
-        setJournals(
-          parsed.map((j: any) => ({
-            ...j,
-            createdAt: new Date(j.createdAt),
-            updatedAt: new Date(j.updatedAt),
-          }))
-        );
+        const parsed = JSON.parse(savedJournals) as unknown;
+        if (Array.isArray(parsed)) {
+          const normalized = parsed
+            .map((entry) => {
+              if (!entry || typeof entry !== "object") {
+                return null;
+              }
+              const candidate = entry as Partial<JournalEntry>;
+              if (
+                typeof candidate.id !== "string" ||
+                typeof candidate.date !== "string" ||
+                typeof candidate.type !== "string"
+              ) {
+                return null;
+              }
+
+              return {
+                id: candidate.id,
+                title: typeof candidate.title === "string" ? candidate.title : "",
+                content:
+                  typeof candidate.content === "string" ? candidate.content : "",
+                date: candidate.date,
+                type: candidate.type === "custom" ? "custom" : "daily",
+                createdAt: candidate.createdAt
+                  ? new Date(candidate.createdAt)
+                  : new Date(),
+                updatedAt: candidate.updatedAt
+                  ? new Date(candidate.updatedAt)
+                  : new Date(),
+              };
+            })
+            .filter((entry): entry is JournalEntry => entry !== null);
+
+          setJournals(normalized);
+        }
       } catch (error) {
         console.error("Error loading journals:", error);
       }
@@ -64,12 +91,12 @@ export default function JournalClient() {
   };
 
   // Get journal for specific date
-  const getJournalForDate = (date: Date): JournalEntry | null => {
+  const getJournalForDate = useCallback((date: Date): JournalEntry | null => {
     const dateStr = date.toISOString().split("T")[0];
     return (
       journals.find((j) => j.date === dateStr && j.type === "daily") || null
     );
-  };
+  }, [journals]);
 
   // Create or update journal entry
   const saveJournalEntry = (entry: Partial<JournalEntry>) => {
@@ -168,7 +195,7 @@ export default function JournalClient() {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [selectedDate]);
+  }, [selectedDate, getJournalForDate]);
 
   const isMobileOrTablet = useIsMobileOrTablet();
 

@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import PWARegister from "@/components/pwa-register";
 import PWAAssetsCheck from "@/components/pwa-assets-check";
+import { withChunkReload } from "@/lib/chunk-retry";
 
 // Optimized loading component
 const LoadingSkeleton = () => (
@@ -19,7 +20,7 @@ const LoadingSkeleton = () => (
 );
 
 // Dynamically import ClientPage with optimized settings
-const ClientPage = dynamic(() => import("./ClientPage"), {
+const ClientPage = dynamic(() => withChunkReload(() => import("./ClientPage")), {
   ssr: false,
   loading: LoadingSkeleton,
   // Add suspense boundary for better loading experience

@@ -6,11 +6,7 @@ import Timer from "@/components/timer";
 import { useTimer, TimerProvider } from "@/lib/timer-context";
 import { useTasks } from "@/lib/task-context";
 import { useAuth } from "@/lib/auth-context";
-import {
-  TaskList,
-  useTaskList,
-  TaskListProvider,
-} from "@/components/task-list";
+import { useTaskList, TaskListProvider } from "@/components/task-list";
 import { Loader2, History, Settings, BookOpen } from "lucide-react";
 import ConfettiAnimation from "@/components/confetti-animation";
 import GoalReachedModal from "@/components/goal-reached-modal";
@@ -19,11 +15,12 @@ import OfflineIndicator from "@/components/offline-indicator";
 import NotificationPermissionPrompt from "@/components/notification-permission-prompt";
 import ServiceWorkerErrorHandler from "@/components/sw-error-handler";
 import PerformanceMonitor from "@/components/performance-monitor";
+import { withChunkReload } from "@/lib/chunk-retry";
 
 // Lazy load pages to reduce initial bundle size
-const JournalPage = lazy(() => import("./journal/journal-client"));
-const HistoryPage = lazy(() => import("./history/history-client"));
-const SettingsPage = lazy(() => import("./settings/settings-client"));
+const JournalPage = lazy(() => withChunkReload(() => import("./journal/journal-client")));
+const HistoryPage = lazy(() => withChunkReload(() => import("./history/history-client")));
+const SettingsPage = lazy(() => withChunkReload(() => import("./settings/settings-client")));
 
 // Fallback components
 const JournalFallback = () => (
@@ -58,9 +55,9 @@ function ClientContent() {
     formatTime,
     timeLeft,
   } = useTimer();
-  const { tasks, getNextTask, setCurrentTaskId } = useTasks();
+  const { getNextTask, setCurrentTaskId } = useTasks();
   const { setOpen } = useTaskList();
-  const { isLoading, user } = useAuth(); // Get loading state from auth context
+  const { isLoading } = useAuth(); // Get loading state from auth context
 
   // Add global keyboard shortcut for Option+Cmd+Space to start first task
   useEffect(() => {
@@ -95,7 +92,7 @@ function ClientContent() {
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
           <p className="text-muted-foreground">Loading your data...</p>
           <p className="text-xs text-muted-foreground max-w-xs text-center">
-            This may take a moment. We've disabled automatic sync to prevent
+            This may take a moment. We&apos;ve disabled automatic sync to prevent
             freezing.
           </p>
         </div>
@@ -162,7 +159,7 @@ function ClientContent() {
             value="timer"
             className="w-full h-[calc(100vh-60px)] overflow-hidden"
           >
-            <Timer useIconButtons={true} />
+            <Timer />
           </TabsContent>
           <TabsContent
             value="journal"

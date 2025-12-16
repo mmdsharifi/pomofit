@@ -38,16 +38,19 @@ export function useVirtualScroll<T>(
 
   const virtualItems = items.slice(startIndex, endIndex);
 
-  const handleScroll = useCallback((event: React.UIEvent<HTMLDivElement>) => {
-    setScrollTop(event.currentTarget.scrollTop);
+  const handleScroll = useCallback((event: Event) => {
+    const target = event.target;
+    if (target instanceof HTMLElement) {
+      setScrollTop(target.scrollTop);
+    }
   }, []);
 
   useEffect(() => {
     const container = containerRef.current;
     if (container) {
-      container.addEventListener("scroll", handleScroll as any);
+      container.addEventListener("scroll", handleScroll);
       return () => {
-        container.removeEventListener("scroll", handleScroll as any);
+        container.removeEventListener("scroll", handleScroll);
       };
     }
   }, [handleScroll]);

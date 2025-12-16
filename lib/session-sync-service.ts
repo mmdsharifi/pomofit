@@ -8,6 +8,28 @@ import { useSyncQueue, useOnlineStatus } from "@/lib/sync-utils"
 import type { PomodoroSession } from "@/lib/history-utils"
 import { isSupabaseConfigured } from "@/lib/supabase-utils"
 
+type SupabaseSessionRecord = {
+  id: string
+  start_time: string
+  duration: number
+  mode: "pomodoro" | "shortBreak" | "longBreak"
+  note: string | null
+  tags: string[] | null
+  task_id: string | null
+  task_title: string | null
+} & Record<string, unknown>
+
+type SupabaseSessionInsert = {
+  id: string
+  start_time: string
+  duration: number
+  mode: PomodoroSession["mode"]
+  note: string | null
+  tags: string[] | null
+  task_id: string | null
+  task_title: string | null
+}
+
 export function useSessionSync() {
   const { user } = useAuth()
   const isOnline = useOnlineStatus()
@@ -19,7 +41,7 @@ export function useSessionSync() {
   const isConfigured = isSupabaseConfigured()
 
   // Convert Supabase session to local session format
-  const convertFromSupabase = useCallback((session: any): PomodoroSession => {
+  const convertFromSupabase = useCallback((session: SupabaseSessionRecord): PomodoroSession => {
     return {
       id: session.id,
       startTime: new Date(session.start_time),
@@ -33,7 +55,7 @@ export function useSessionSync() {
   }, [])
 
   // Convert local session to Supabase format
-  const convertToSupabase = useCallback((session: PomodoroSession): any => {
+  const convertToSupabase = useCallback((session: PomodoroSession): SupabaseSessionInsert => {
     return {
       id: session.id,
       start_time: session.startTime.toISOString(),

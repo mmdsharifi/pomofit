@@ -57,9 +57,13 @@ export function registerServiceWorker() {
 export function isPWAInstalled() {
   if (typeof window === "undefined") return false
 
+  const navigatorWithStandalone = window.navigator as Navigator & {
+    standalone?: boolean
+  }
+
   return (
     window.matchMedia("(display-mode: standalone)").matches ||
-    (window.navigator as any).standalone || // for iOS
+    Boolean(navigatorWithStandalone.standalone) || // for iOS
     document.referrer.includes("android-app://")
   )
 }

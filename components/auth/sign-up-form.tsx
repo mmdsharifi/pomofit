@@ -49,10 +49,14 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
         description: "Please check your email to verify your account.",
       })
       onSuccess()
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "An error occurred during sign up.";
       toast({
         title: "Sign up failed",
-        description: error.message || "An error occurred during sign up.",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {

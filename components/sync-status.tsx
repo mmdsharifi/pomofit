@@ -12,6 +12,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+interface SyncQueueEntry {
+  synced: boolean;
+  [key: string]: unknown;
+}
+
 export function SyncStatus() {
   const isOnline = useOnlineStatus();
   const { user } = useAuth();
@@ -21,9 +26,10 @@ export function SyncStatus() {
   const [pendingChanges, setPendingChanges] = useState(0);
 
   // Cache for sync queue data to reduce localStorage access
-  const syncQueueCache = useRef<{ data: any[]; timestamp: number } | null>(
-    null
-  );
+  const syncQueueCache = useRef<{
+    data: SyncQueueEntry[];
+    timestamp: number;
+  } | null>(null);
   const CACHE_DURATION = 30 * 1000; // 30 seconds
 
   // Check for pending changes in the sync queue
@@ -40,7 +46,7 @@ export function SyncStatus() {
           now - syncQueueCache.current.timestamp < CACHE_DURATION
         ) {
           const pendingOps = syncQueueCache.current.data.filter(
-            (op: any) => !op.synced
+            (op) => !op.synced
           ).length;
           setPendingChanges(pendingOps);
           setSyncState(pendingOps > 0 ? "syncing" : "synced");
@@ -48,8 +54,17 @@ export function SyncStatus() {
         }
 
         const queue = localStorage.getItem("pomofit-sync-queue");
-        const syncQueue = queue ? JSON.parse(queue) : [];
-        const pendingOps = syncQueue.filter((op: any) => !op.synced).length;
+        const parsedQueue = queue ? JSON.parse(queue) : [];
+        const syncQueue = Array.isArray(parsedQueue)
+          ? parsedQueue.filter((item): item is SyncQueueEntry => {
+              if (!item || typeof item !== "object") {
+                return false;
+              }
+              const candidate = item as { synced?: unknown };
+              return typeof candidate.synced === "boolean";
+            })
+          : [];
+        const pendingOps = syncQueue.filter((op) => !op.synced).length;
 
         // Update cache
         syncQueueCache.current = {

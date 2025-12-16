@@ -34,7 +34,7 @@ export default function OfflineIndicator() {
   return (
     <div className="fixed bottom-4 left-4 z-50 bg-yellow-500 text-white px-3 py-1.5 rounded-md text-xs flex items-center gap-1.5 shadow-lg">
       <WifiOff className="h-3.5 w-3.5" />
-      <span>You're offline. The app will continue to work.</span>
+      <span>You&apos;re offline. The app will continue to work.</span>
     </div>
   );
 }

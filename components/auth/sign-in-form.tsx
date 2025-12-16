@@ -42,10 +42,14 @@ export function SignInForm({ onSuccess }: SignInFormProps) {
         description: "You have successfully signed in.",
       })
       onSuccess()
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Please check your credentials and try again.";
       toast({
         title: "Sign in failed",
-        description: error.message || "Please check your credentials and try again.",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {

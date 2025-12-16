@@ -2,13 +2,15 @@ import type { Task } from "@/types/task"
 import type { PomodoroSession, TaskCompletionEvent } from "@/lib/history-utils"
 
 // Define the structure of our export data
+export type ExportSettings = Record<string, unknown>
+
 export interface ExportData {
   version: string
   exportDate: string
   tasks: Task[]
   sessions: PomodoroSession[]
   taskCompletions: TaskCompletionEvent[]
-  settings: any
+  settings: ExportSettings
 }
 
 /**
@@ -44,11 +46,9 @@ export function convertToCSV(data: ExportData): string {
     sections.push('"' + taskKeys.join('","') + '"')
     // Create data rows
     data.tasks.forEach((task) => {
-      const row = taskKeys.map((key) => {
-        // @ts-ignore - We're dynamically accessing properties
-        const value = task[key]
-        return formatCSVValue(value)
-      })
+      const row = taskKeys.map((key) =>
+        formatCSVValue((task as Record<string, unknown>)[key])
+      )
       sections.push('"' + row.join('","') + '"')
     })
   } else {
@@ -65,11 +65,9 @@ export function convertToCSV(data: ExportData): string {
     sections.push('"' + sessionKeys.join('","') + '"')
     // Create data rows
     data.sessions.forEach((session) => {
-      const row = sessionKeys.map((key) => {
-        // @ts-ignore - We're dynamically accessing properties
-        const value = session[key]
-        return formatCSVValue(value)
-      })
+      const row = sessionKeys.map((key) =>
+        formatCSVValue((session as Record<string, unknown>)[key])
+      )
       sections.push('"' + row.join('","') + '"')
     })
   } else {
@@ -86,11 +84,9 @@ export function convertToCSV(data: ExportData): string {
     sections.push('"' + completionKeys.join('","') + '"')
     // Create data rows
     data.taskCompletions.forEach((completion) => {
-      const row = completionKeys.map((key) => {
-        // @ts-ignore - We're dynamically accessing properties
-        const value = completion[key]
-        return formatCSVValue(value)
-      })
+      const row = completionKeys.map((key) =>
+        formatCSVValue((completion as Record<string, unknown>)[key])
+      )
       sections.push('"' + row.join('","') + '"')
     })
   } else {
@@ -161,7 +157,7 @@ export function parseCSVData(csvData: string): ExportData | null {
 
       // Process data based on current section
       if (headers.length > 0 && parsedLine.length > 0) {
-        const item: Record<string, any> = {}
+        const item: Record<string, unknown> = {}
 
         // Map values to headers
         for (let j = 0; j < Math.min(headers.length, parsedLine.length); j++) {
@@ -248,7 +244,7 @@ function parseCSVLine(line: string): string[] {
 /**
  * Format a value for CSV export
  */
-function formatCSVValue(value: any): string {
+function formatCSVValue(value: unknown): string {
   if (value === null || value === undefined) {
     return ""
   }
@@ -272,7 +268,7 @@ function formatCSVValue(value: any): string {
 /**
  * Parse a value from CSV import
  */
-function parseCSVValue(value: string): any {
+function parseCSVValue(value: string): unknown {
   if (value === "") {
     return null
   }
@@ -281,7 +277,7 @@ function parseCSVValue(value: string): any {
   if ((value.startsWith("{") && value.endsWith("}")) || (value.startsWith("[") && value.endsWith("]"))) {
     try {
       return JSON.parse(value)
-    } catch (e) {
+    } catch (_error) {
       // Not valid JSON, continue with other parsing
     }
   }

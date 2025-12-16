@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import {
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  useRef,
+  type MutableRefObject,
+} from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowUpRight, RefreshCw, Loader2 } from "lucide-react";
 import {
@@ -29,22 +36,20 @@ export default function FitOnRecommendation({
   workouts,
   className,
 }: FitOnRecommendationProps) {
+  const normalizedWorkouts = workouts ?? [];
+  const hasWorkouts = normalizedWorkouts.length > 0;
   const isOnline = useOnlineStatus();
-  // If no workouts configured at all, render nothing (test expectation)
-  if (!workouts || workouts.length === 0) {
-    return null;
-  }
 
   const moodMap = useMemo(() => {
     const map = new Map<FitOnMoodId, FitOnWorkout[]>();
-    workouts.forEach((workout) => {
+    normalizedWorkouts.forEach((workout) => {
       if (!map.has(workout.mood)) {
         map.set(workout.mood, []);
       }
       map.get(workout.mood)!.push(workout);
     });
     return map;
-  }, [workouts]);
+  }, [normalizedWorkouts]);
 
   // Lightweight personalization data loaded client-side to avoid hydration mismatch
   const [moodStats, setMoodStats] = useState<MoodStats>({});
@@ -125,7 +130,7 @@ export default function FitOnRecommendation({
 
   // Simple local analytics to measure interactions
   const logEvent = useCallback(
-    (type: string, payload?: Record<string, any>) => {
+    (type: string, payload?: Record<string, unknown>) => {
       if (typeof window === "undefined") return;
       try {
         const key = "fiton-analytics";
@@ -217,15 +222,18 @@ export default function FitOnRecommendation({
 
   const selectedWorkout = useMemo(() => {
     if (!selectedWorkoutId) return null;
-    return workouts.find((workout) => workout.id === selectedWorkoutId) ?? null;
-  }, [selectedWorkoutId, workouts]);
+    return (
+      normalizedWorkouts.find((workout) => workout.id === selectedWorkoutId) ??
+      null
+    );
+  }, [selectedWorkoutId, normalizedWorkouts]);
 
   const currentMood = availableMoods.find((mood) => mood.id === selectedMood);
   const currentMoodCount =
     (selectedMood && moodMap.get(selectedMood)?.length) ?? 0;
 
   // Empty state when no moods are available (should not happen if workouts exist)
-  if (availableMoods.length === 0) {
+  if (!hasWorkouts || availableMoods.length === 0) {
     return null;
   }
 
@@ -345,13 +353,15 @@ export default function FitOnRecommendation({
                 rel="noreferrer"
                 className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
                 onClick={() => {
-                  persistMoodStats((s) => ({
-                    ...s,
-                    [selectedMood as string]: {
-                      count: (s[selectedMood as string]?.count ?? 0) + 1,
-                      lastUsed: Date.now(),
-                    },
-                  }));
+                  if (selectedMood) {
+                    persistMoodStats((s) => ({
+                      ...s,
+                      [selectedMood]: {
+                        count: (s[selectedMood]?.count ?? 0) + 1,
+                        lastUsed: Date.now(),
+                      },
+                    }));
+                  }
                   logEvent("open", {
                     mood: selectedMood,
                     workoutId: selectedWorkout.id,
@@ -371,7 +381,6 @@ export default function FitOnRecommendation({
         )
       ) : (
         <OfflineStretch
-          isOnline={false}
           lottieRef={lottieRef}
           lottieError={lottieError}
           setLottieError={setLottieError}
@@ -382,13 +391,11 @@ export default function FitOnRecommendation({
 }
 
 function OfflineStretch({
-  isOnline,
   lottieRef,
   lottieError,
   setLottieError,
 }: {
-  isOnline: boolean;
-  lottieRef?: React.MutableRefObject<Player | null>;
+  lottieRef?: MutableRefObject<Player | null>;
   lottieError?: boolean;
   setLottieError?: (v: boolean) => void;
 }) {

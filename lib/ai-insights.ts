@@ -43,7 +43,7 @@ export interface InsightAnalysis {
   description: string;
   actionable: boolean;
   priority: "high" | "medium" | "low";
-  data?: any;
+  data?: Record<string, unknown> | unknown[];
 }
 
 export class AIInsightsAnalyzer {

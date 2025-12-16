@@ -26,11 +26,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 
-interface TimerProps {
-  useIconButtons?: boolean;
-}
-
-export default function Timer({ useIconButtons = false }: TimerProps) {
+export default function Timer() {
   const {
     mode,
     timeLeft,
@@ -46,10 +42,6 @@ export default function Timer({ useIconButtons = false }: TimerProps) {
     handleNoteSubmit,
     settings,
     getRandomMotivationalMessage,
-    showGoalReachedModal,
-    setShowGoalReachedModal,
-    playConfetti,
-    setPlayConfetti,
   } = useTimer();
 
   const { tasks, currentTaskId, toggleTask, setCurrentTaskId } = useTasks();
@@ -274,7 +266,7 @@ export default function Timer({ useIconButtons = false }: TimerProps) {
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  You've exceeded your daily goal by{" "}
+                  You&apos;ve exceeded your daily goal by{" "}
                   {pomodorosCompleted - pomodoroGoal} sessions! 🎉
                 </TooltipContent>
               </Tooltip>

@@ -20,7 +20,7 @@ interface TimelineViewProps {
 interface ProcessedEvent {
   id: string;
   type: "session" | "completion";
-  data: any;
+  data: PomodoroSession | TaskCompletionEvent;
   startTime: Date;
   endTime: Date;
   title: string;

@@ -2,12 +2,14 @@
  * Enhanced local storage utility for PWA that handles offline scenarios
  */
 
-// Queue for operations that need to be synced when back online
-let operationsQueue: Array<{
+type QueuedOperation = {
   key: string
-  value: any
+  value: unknown
   timestamp: number
-}> = []
+}
+
+// Queue for operations that need to be synced when back online
+let operationsQueue: QueuedOperation[] = []
 
 // Initialize the queue from storage
 function initQueue() {
@@ -16,7 +18,17 @@ function initQueue() {
   try {
     const savedQueue = localStorage.getItem("pwa-operations-queue")
     if (savedQueue) {
-      operationsQueue = JSON.parse(savedQueue)
+      const parsed = JSON.parse(savedQueue)
+      operationsQueue = Array.isArray(parsed)
+        ? parsed.filter((item): item is QueuedOperation => {
+            return (
+              item &&
+              typeof item === "object" &&
+              typeof (item as { key?: unknown }).key === "string" &&
+              typeof (item as { timestamp?: unknown }).timestamp === "number"
+            )
+          })
+        : []
     }
   } catch (error) {
     console.error("Failed to initialize operations queue:", error)

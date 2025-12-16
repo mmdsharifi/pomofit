@@ -536,7 +536,7 @@ export function TaskList() {
                           size="sm"
                           onClick={handleNewTask}
                         >
-                          Add "{inputValue}"
+                          Add &quot;{inputValue}&quot;
                         </Button>
                       </div>
                     </>
@@ -761,7 +761,9 @@ export function TaskList() {
           </DialogHeader>
           <div className="py-4">
             {taskToDelete && (
-              <p className="text-sm font-medium">"{taskToDelete.title}"</p>
+              <p className="text-sm font-medium">
+                &quot;{taskToDelete.title}&quot;
+              </p>
             )}
           </div>
           <DialogFooter>

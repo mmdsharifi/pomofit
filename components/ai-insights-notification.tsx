@@ -4,11 +4,10 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { X, Lightbulb, TrendingUp, Target, Clock } from "lucide-react";
+import { X, Lightbulb, TrendingUp, Target } from "lucide-react";
 import { Task } from "@/types/task";
 import {
   generateUserInsights,
-  getInsightEmoji,
   type TaskHistory,
   type TimerSession,
 } from "@/lib/ai-insights";

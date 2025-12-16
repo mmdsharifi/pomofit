@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
-import { getHistory } from "@/lib/history-utils"
+import { getHistory, type PomodoroSession } from "@/lib/history-utils"
 import { BarChart, Clock, Calendar, Tag, Zap, Brain, TrendingUp, Focus, AlertCircle, CheckSquare } from "lucide-react"
 import { Bar, BarChart as RechartsBarChart, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
@@ -59,14 +59,9 @@ export default function ProductivityInsights() {
     return new Date(d.setDate(diff))
   }
 
-  // Helper function to get day name
-  const getDayName = (date: Date) => {
-    return date.toLocaleDateString("en-US", { weekday: "short" })
-  }
-
   // Calculate weekly comparison data
   const calculateWeeklyComparison = useMemo(() => {
-    return (sessions: any[]) => {
+    return (sessions: PomodoroSession[]) => {
       const now = new Date()
       const currentWeekStart = getWeekStart(now)
       const previousWeekStart = new Date(currentWeekStart)

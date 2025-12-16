@@ -74,23 +74,22 @@ export function getHistory(): PomodoroSession[] {
 
     // Convert string dates back to Date objects and validate sessions
     const validSessions = parsedHistory
-      .map((session: any, index: number) => {
+      .map((session, index): PomodoroSession | null => {
         try {
           if (!session || typeof session !== "object") {
-            // Reduce console noise - only log in development
             if (process.env.NODE_ENV === "development") {
               console.warn(`Invalid session at index ${index}:`, session);
             }
             return null;
           }
 
-          // Ensure required fields exist
-          if (
-            !session.id ||
-            !session.startTime ||
-            typeof session.duration !== "number"
-          ) {
-            // Reduce console noise - only log in development
+          const candidate = session as Record<string, unknown>;
+          const id = typeof candidate.id === "string" ? candidate.id : null;
+          const duration =
+            typeof candidate.duration === "number" ? candidate.duration : null;
+          const rawStartTime = candidate.startTime;
+
+          if (!id || duration === null || rawStartTime == null) {
             if (process.env.NODE_ENV === "development") {
               console.warn(
                 `Session missing required fields at index ${index}:`,
@@ -100,28 +99,47 @@ export function getHistory(): PomodoroSession[] {
             return null;
           }
 
-          // Convert startTime to Date object
-          let startTime: Date;
-          if (session.startTime instanceof Date) {
-            startTime = session.startTime;
-          } else {
-            startTime = new Date(session.startTime);
-          }
+          const startTime =
+            rawStartTime instanceof Date
+              ? rawStartTime
+              : new Date(
+                  typeof rawStartTime === "number" ||
+                    typeof rawStartTime === "string"
+                    ? rawStartTime
+                    : NaN
+                );
 
-          if (isNaN(startTime.getTime())) {
-            // Reduce console noise - only log in development
+          if (Number.isNaN(startTime.getTime())) {
             if (process.env.NODE_ENV === "development") {
               console.warn(
                 `Invalid startTime in session at index ${index}:`,
-                session.startTime
+                rawStartTime
               );
             }
             return null;
           }
 
+          const mode =
+            candidate.mode === "shortBreak"
+              ? "shortBreak"
+              : candidate.mode === "longBreak"
+              ? "longBreak"
+              : "pomodoro";
+
+          const tags = Array.isArray(candidate.tags)
+            ? candidate.tags.filter((tag): tag is string => typeof tag === "string")
+            : undefined;
+
           return {
-            ...session,
+            id,
             startTime,
+            duration,
+            mode,
+            note: typeof candidate.note === "string" ? candidate.note : undefined,
+            tags,
+            taskId: typeof candidate.taskId === "string" ? candidate.taskId : undefined,
+            taskTitle:
+              typeof candidate.taskTitle === "string" ? candidate.taskTitle : undefined,
           };
         } catch (error) {
           console.error(
@@ -132,7 +150,7 @@ export function getHistory(): PomodoroSession[] {
           return null;
         }
       })
-      .filter(Boolean);
+      .filter((session): session is PomodoroSession => session !== null);
 
     // Update cache
     historyCache = validSessions;
@@ -231,25 +249,50 @@ export function getTaskCompletions(): TaskCompletionEvent[] {
 
     // Convert string dates back to Date objects
     return parsedCompletions
-      .map((completion: any) => {
+      .map((completion, index): TaskCompletionEvent | null => {
         try {
           if (!completion || typeof completion !== "object") {
             return null;
           }
 
-          let completedAt: Date;
-          if (completion.completedAt instanceof Date) {
-            completedAt = completion.completedAt;
-          } else {
-            completedAt = new Date(completion.completedAt);
+          const candidate = completion as Record<string, unknown>;
+          const id = typeof candidate.id === "string" ? candidate.id : null;
+          const taskId =
+            typeof candidate.taskId === "string" ? candidate.taskId : null;
+          const taskTitle =
+            typeof candidate.taskTitle === "string"
+              ? candidate.taskTitle
+              : null;
+          const rawCompletedAt = candidate.completedAt;
+
+          if (!id || !taskId || !taskTitle || rawCompletedAt == null) {
+            if (process.env.NODE_ENV === "development") {
+              console.warn(
+                `Completion missing required fields at index ${index}:`,
+                completion
+              );
+            }
+            return null;
           }
 
-          if (isNaN(completedAt.getTime())) {
+          const completedAt =
+            rawCompletedAt instanceof Date
+              ? rawCompletedAt
+              : new Date(
+                  typeof rawCompletedAt === "number" ||
+                    typeof rawCompletedAt === "string"
+                    ? rawCompletedAt
+                    : NaN
+                );
+
+          if (Number.isNaN(completedAt.getTime())) {
             return null;
           }
 
           return {
-            ...completion,
+            id,
+            taskId,
+            taskTitle,
             completedAt,
           };
         } catch (error) {
@@ -257,7 +300,9 @@ export function getTaskCompletions(): TaskCompletionEvent[] {
           return null;
         }
       })
-      .filter(Boolean);
+      .filter(
+        (completion): completion is TaskCompletionEvent => completion !== null
+      );
   } catch (error) {
     console.error("Error parsing task completions:", error);
     return [];

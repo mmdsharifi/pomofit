@@ -32,11 +32,10 @@ export default function PerformanceMonitor() {
       // Monitor Cumulative Layout Shift (CLS)
       const clsObserver = new PerformanceObserver((list) => {
         let clsValue = 0;
-        const entries = list.getEntries();
+        const entries = list.getEntries() as LayoutShift[];
         entries.forEach((entry) => {
-          const layoutShiftEntry = entry as any;
-          if (!layoutShiftEntry.hadRecentInput) {
-            clsValue += layoutShiftEntry.value;
+          if (!entry.hadRecentInput) {
+            clsValue += entry.value;
           }
         });
         console.log("CLS:", clsValue);

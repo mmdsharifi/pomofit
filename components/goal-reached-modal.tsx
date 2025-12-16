@@ -28,7 +28,7 @@ export default function GoalReachedModal({ open, onOpenChange, goal }: GoalReach
             Daily Goal Reached!
           </DialogTitle>
           <DialogDescription className="text-center pt-2">
-            Congratulations! You've completed your daily goal of {goal} pomodoros.
+            Congratulations! You&apos;ve completed your daily goal of {goal} pomodoros.
           </DialogDescription>
         </DialogHeader>
 

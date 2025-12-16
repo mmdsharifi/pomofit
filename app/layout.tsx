@@ -5,9 +5,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/lib/theme-context";
 import { TaskProvider } from "@/lib/task-context";
 import { AuthProvider } from "@/lib/auth-context";
-import { StagewiseToolbar } from "@stagewise/toolbar-next";
-import ReactPlugin from "@stagewise-plugins/react";
 import PerformanceMonitor from "@/components/performance-monitor";
+import ChunkRecovery from "@/components/chunk-recovery";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 // Load fonts with optimized settings for performance
 const splineSans = Spline_Sans({
@@ -181,16 +181,18 @@ export default function RootLayout({
         className={`${splineSans.className} ${splineSansMono.variable}`}
         suppressHydrationWarning
       >
-        <AuthProvider>
-          <ThemeProvider>
-            <TaskProvider>
-              {children}
-              <Toaster />
-              <StagewiseToolbar config={{ plugins: [ReactPlugin] }} />
-              <PerformanceMonitor />
-            </TaskProvider>
-          </ThemeProvider>
-        </AuthProvider>
+        <ErrorBoundary>
+          <AuthProvider>
+            <ThemeProvider>
+              <TaskProvider>
+                {children}
+                <Toaster />
+                <ChunkRecovery />
+                <PerformanceMonitor />
+              </TaskProvider>
+            </ThemeProvider>
+          </AuthProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

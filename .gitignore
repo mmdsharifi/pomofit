@@ -28,3 +28,18 @@ next-env.d.ts
 
 # Local Netlify folder
 .netlify
+
+# Test coverage
+/coverage
+.nyc_output
+*.lcov
+coverage/
+.nyc_output/
+*.lcov.info
+htmlcov/
+.coverage
+.coverage.*
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/

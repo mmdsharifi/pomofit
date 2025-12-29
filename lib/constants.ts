@@ -16,8 +16,9 @@ export const STORAGE_KEYS = {
 export const SOUND_PATHS = {
   BREAK_START: "/sounds/break-start.mp3",
   BREAK_END: "/sounds/break-end.mp3",
-  TIMER_START: "/sounds/timer-start.mp3",
-  TIMER_END: "/sounds/timer-end.mp3",
+  // Using break-start.mp3 for timer start/end since timer-specific sounds don't exist
+  TIMER_START: "/sounds/break-start.mp3",
+  TIMER_END: "/sounds/break-end.mp3",
 } as const;
 
 // Timer modes
@@ -58,7 +59,8 @@ export const API_ENDPOINTS = {
 
 // Error messages
 export const ERROR_MESSAGES = {
-  OFFLINE_MODE: "Supabase integration is temporarily disabled. Working in offline mode only.",
+  OFFLINE_MODE:
+    "Supabase integration is temporarily disabled. Working in offline mode only.",
   TASK_CREATION_FAILED: "Failed to create task",
   SYNC_FAILED: "Failed to sync data",
   NOTIFICATION_FAILED: "Failed to send notification",

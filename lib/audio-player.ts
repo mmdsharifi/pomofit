@@ -20,24 +20,41 @@ class AudioPlayer {
         // Stop any currently playing audio
         this.stop();
 
-        const audio = new Audio(soundPath);
+        // Ensure path starts with a slash and remove any duplicate slashes
+        const normalizedPath = `/${soundPath.replace(/^\/+/, "")}`;
+        console.log("Attempting to play audio at path:", normalizedPath);
+
+        const audio = new Audio(normalizedPath);
         this.currentAudio = audio;
 
         audio.onended = () => {
+          console.log("Audio playback ended:", normalizedPath);
           this.currentAudio = null;
           resolve();
         };
 
-        audio.onerror = () => {
+        audio.onerror = (event) => {
+          console.error("Audio playback error:", {
+            path: normalizedPath,
+            error: event,
+            readyState: audio.readyState,
+            errorState: audio.error,
+          });
           this.currentAudio = null;
-          reject(new Error(`Failed to play audio: ${soundPath}`));
+          reject(new Error(`Failed to play audio: ${normalizedPath}`));
         };
 
-        audio.play().catch((error) => {
-          this.currentAudio = null;
-          reject(error);
-        });
+        const playPromise = audio.play();
+
+        if (playPromise !== undefined) {
+          playPromise.catch((error) => {
+            console.error("Audio play() failed:", error);
+            this.currentAudio = null;
+            reject(error);
+          });
+        }
       } catch (error) {
+        console.error("Unexpected error in play():", error);
         reject(error);
       }
     });
@@ -70,9 +87,11 @@ const audioPlayer = new AudioPlayer();
  */
 export async function playStartSound(): Promise<void> {
   try {
-    await audioPlayer.play(SOUND_PATHS.TIMER_START);
+    // First try to play the break start sound (since we know it exists)
+    console.log("Playing break start sound as timer start sound");
+    await audioPlayer.play(SOUND_PATHS.BREAK_START);
   } catch (error) {
-    console.error("Error playing start sound:", error);
+    console.error("Failed to play any start sound:", error);
   }
 }
 

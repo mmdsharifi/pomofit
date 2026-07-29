@@ -3,6 +3,7 @@
 import type React from "react";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -38,6 +39,7 @@ import {
   Timer,
   Dumbbell,
   Database,
+  Loader2,
 } from "lucide-react";
 import { useLocalStorage } from "@/lib/use-local-storage";
 import { workoutGifs } from "@/lib/workout-data";
@@ -110,7 +112,7 @@ const SETTINGS_SECTIONS: SectionConfig[] = [
 
 export default function SettingsClient() {
   const { toast } = useToast();
-  const { resetTimer } = useTimer();
+  const { resetTimer, isRunning } = useTimer();
   const playerRefs = useRef<{ [key: string]: Player | null }>({});
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -290,65 +292,104 @@ export default function SettingsClient() {
     settings.devModeFastTimers,
   ]);
 
-  const handleSave = () => {
-    // Ensure at least one workout is selected
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("saved");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const isFirstRenderRef = useRef(true);
+
+  // Auto-hide "saved" status badge after 5 seconds
+  useEffect(() => {
+    if (saveStatus === "saved") {
+      const timer = setTimeout(() => {
+        setSaveStatus("idle");
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [saveStatus]);
+
+  // Auto-save settings when local form values change (debounced)
+  useEffect(() => {
+    if (isFirstRenderRef.current) {
+      isFirstRenderRef.current = false;
+      return;
+    }
+
+    const goalValue = Math.max(1, Math.min(20, pomodoroGoal || 8));
+
+    // Check if values actually changed compared to saved settings
+    const hasChanges =
+      pomodoroTime !== settings.pomodoroTime ||
+      shortBreakTime !== settings.shortBreakTime ||
+      longBreakTime !== settings.longBreakTime ||
+      goalValue !== settings.pomodoroGoal ||
+      JSON.stringify(selectedWorkouts) !== JSON.stringify(settings.workoutGifs) ||
+      JSON.stringify(workoutSources) !== JSON.stringify(settings.workoutSources) ||
+      JSON.stringify(fitonWorkouts) !== JSON.stringify(settings.fitonWorkouts) ||
+      devModeFastTimers !== settings.devModeFastTimers;
+
+    if (!hasChanges) {
+      return;
+    }
+
+    // Validation guardrails
     if (selectedWorkouts.length === 0) {
-      toast({
-        title: "Error",
-        description: "Please select at least one workout.",
-        variant: "destructive",
-      });
+      setSaveStatus("error");
+      setSaveError("Please select at least one Lottie workout.");
       return;
     }
-
     if (!workoutSources.lottie && !workoutSources.fiton) {
-      toast({
-        title: "Error",
-        description: "Enable at least one workout source.",
-        variant: "destructive",
-      });
+      setSaveStatus("error");
+      setSaveError("Enable at least one workout source.");
       return;
     }
-
     if (workoutSources.fiton && fitonWorkouts.length === 0) {
-      toast({
-        title: "Error",
-        description: "Add at least one FitOn workout or disable FitOn source.",
-        variant: "destructive",
-      });
+      setSaveStatus("error");
+      setSaveError("Add at least one FitOn workout or disable FitOn source.");
       return;
     }
 
-    // Validate pomodoro goal
-    const goalValue = Math.max(1, Math.min(20, pomodoroGoal));
+    setSaveStatus("saving");
+    setSaveError(null);
 
-    // Save settings to local storage
-    setSettings({
-      pomodoroTime,
-      shortBreakTime,
-      longBreakTime,
-      pomodoroGoal: goalValue,
-      workoutGifs: selectedWorkouts,
-      workoutSources,
-      fitonWorkouts,
-      devModeFastTimers: isDevEnvironment ? devModeFastTimers : false,
-    });
+    const timer = setTimeout(() => {
+      setSettings({
+        pomodoroTime,
+        shortBreakTime,
+        longBreakTime,
+        pomodoroGoal: goalValue,
+        workoutGifs: selectedWorkouts,
+        workoutSources,
+        fitonWorkouts,
+        devModeFastTimers: isDevEnvironment ? devModeFastTimers : false,
+      });
 
-    // Reset the timer to apply new duration settings
-    resetTimer();
+      setSaveStatus("saved");
+    }, 500);
 
-    // Show success toast
-    toast({
-      title: "Settings saved",
-      description: "Your timer settings have been updated.",
-    });
-
-    // Force a reload to ensure all components pick up the new settings
-    window.location.reload();
-  };
+    return () => clearTimeout(timer);
+  }, [
+    pomodoroTime,
+    shortBreakTime,
+    longBreakTime,
+    pomodoroGoal,
+    selectedWorkouts,
+    workoutSources,
+    fitonWorkouts,
+    devModeFastTimers,
+    settings,
+    setSettings,
+    isDevEnvironment,
+  ]);
 
   const toggleWorkout = (workoutId: string) => {
     if (selectedWorkouts.includes(workoutId)) {
+      if (selectedWorkouts.length === 1) {
+        toast({
+          title: "Error",
+          description: "Please select at least one workout.",
+          variant: "destructive",
+        });
+        return;
+      }
       setSelectedWorkouts(selectedWorkouts.filter((id) => id !== workoutId));
     } else {
       setSelectedWorkouts([...selectedWorkouts, workoutId]);
@@ -390,6 +431,25 @@ export default function SettingsClient() {
     source: keyof typeof workoutSources,
     value: boolean
   ) => {
+    const otherSource = source === "lottie" ? "fiton" : "lottie";
+    if (!value && !workoutSources[otherSource]) {
+      toast({
+        title: "Error",
+        description: "Enable at least one workout source.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (source === "fiton" && value && fitonWorkouts.length === 0) {
+      toast({
+        title: "Error",
+        description: "Add at least one FitOn workout to enable FitOn source.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setWorkoutSources((prev) => ({ ...prev, [source]: value }));
   };
 
@@ -436,6 +496,14 @@ export default function SettingsClient() {
   };
 
   const removeFitOnWorkout = (workoutId: string) => {
+    if (fitonWorkouts.length === 1 && workoutSources.fiton) {
+      toast({
+        title: "Error",
+        description: "Add another FitOn workout or disable FitOn source first.",
+        variant: "destructive",
+      });
+      return;
+    }
     setFitonWorkouts((prev) =>
       prev.filter((workout) => workout.id !== workoutId)
     );
@@ -645,17 +713,73 @@ export default function SettingsClient() {
 
   return (
     <div className="px-4 py-6 sm:px-6 lg:px-10">
-      <div className="mb-8 space-y-2">
-        <h1 className="text-3xl font-semibold">Settings</h1>
-        <p className="text-sm text-muted-foreground">
-          Choose a section on the left to keep the right side focused on what
-          you are editing.
-        </p>
+      <div className="sticky top-0 z-20 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-10 lg:px-10 py-4 mb-6 bg-background/95 backdrop-blur-sm border-b border-border/40 flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-4 flex-wrap">
+          <h1 className="text-3xl font-semibold">Settings</h1>
+          <div className="flex items-center gap-2 text-sm" aria-live="polite">
+            <AnimatePresence mode="wait">
+              {saveStatus === "saving" && (
+                <motion.div
+                  key="saving"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.15 }}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
+                >
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Saving changes...</span>
+                </motion.div>
+              )}
+              {saveStatus === "saved" && (
+                <motion.div
+                  key="saved"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300"
+                >
+                  <svg
+                    className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={3}
+                  >
+                    <motion.path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 13l4 4L19 7"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      animate={{ pathLength: 1, opacity: 1 }}
+                      transition={{ duration: 0.35, ease: "easeOut" }}
+                    />
+                  </svg>
+                  <span>All changes saved</span>
+                </motion.div>
+              )}
+              {saveStatus === "error" && (
+                <motion.div
+                  key="error"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.15 }}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-destructive/30 bg-destructive/10 px-2.5 py-1 text-xs font-medium text-destructive"
+                >
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  <span>{saveError || "Validation error"}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-col gap-6 lg:flex-row">
         <nav
-          className="space-y-3 rounded-2xl border bg-card/30 p-4 shadow-sm lg:sticky lg:top-6 lg:h-fit lg:w-1/3 lg:max-w-sm"
+          className="space-y-3 rounded-2xl border bg-card/30 p-4 shadow-sm lg:sticky lg:top-20 lg:h-fit lg:w-1/3 lg:max-w-sm"
           aria-label="Settings sections"
         >
           {SETTINGS_SECTIONS.map((section) => {
@@ -1422,13 +1546,15 @@ export default function SettingsClient() {
           )}
 
           <div className="space-y-3 border-t pt-6">
-            <Button
-              onClick={handleSave}
-              className="w-full max-w-xs"
-              aria-label="Save all settings"
-            >
-              Save Settings
-            </Button>
+            {isRunning && (
+              <Alert variant="default" className="border-amber-500/50 bg-amber-500/10 text-amber-900 dark:text-amber-200">
+                <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <AlertTitle>Timer is running</AlertTitle>
+                <AlertDescription>
+                  Duration changes will automatically apply starting from your next session.
+                </AlertDescription>
+              </Alert>
+            )}
 
             <VersionDisplay />
           </div>

@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 
+import { BREAK_TITLE_EMOJIS } from "@/lib/constants";
+
 export default function Timer() {
   const {
     mode,
@@ -57,9 +59,8 @@ export default function Timer() {
   const hasIncrementedPomodoroRef = useRef(false);
 
   const [showResetConfirmation, setShowResetConfirmation] = useState(false);
-  const breakTitleEmojis = ["💪", "🧘", "🤸", "🏃‍♂️", "🚴", "🥊", "⛹️‍♀️", "🏋️"];
   const [breakEmoji, setBreakEmoji] = useState(
-    breakTitleEmojis[Math.floor(Math.random() * breakTitleEmojis.length)]
+    BREAK_TITLE_EMOJIS[Math.floor(Math.random() * BREAK_TITLE_EMOJIS.length)]
   );
 
   // Create an array of the total number of pomodoros (goal)
@@ -74,7 +75,7 @@ export default function Timer() {
       sessionIdRef.current = Date.now().toString();
       motivationalMessageRef.current = getRandomMotivationalMessage();
       setBreakEmoji(
-        breakTitleEmojis[Math.floor(Math.random() * breakTitleEmojis.length)]
+        BREAK_TITLE_EMOJIS[Math.floor(Math.random() * BREAK_TITLE_EMOJIS.length)]
       );
     }
 

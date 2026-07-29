@@ -1,19 +1,25 @@
 // Session management utilities
+
 export function isPomodoroActive(): boolean {
-  // Implementation will check if there's an active Pomodoro session
-  return false;
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("pomofit-active-mode") === "pomodoro";
 }
 
 export function isRestSessionActive(): boolean {
-  // Implementation will check if there's an active rest session
-  return false;
+  if (typeof window === "undefined") return false;
+  const mode = localStorage.getItem("pomofit-active-mode");
+  return mode === "shortBreak" || mode === "longBreak";
 }
 
 export async function refreshAppData(): Promise<void> {
-  // Implementation will refresh the app data
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("pomofit-daily-refresh"));
+  }
 }
 
 export function getCurrentSession() {
-  // Returns current session data if any
-  return null;
+  if (typeof window === "undefined") return null;
+  const mode = localStorage.getItem("pomofit-active-mode");
+  if (!mode) return null;
+  return { mode };
 }

@@ -8,12 +8,15 @@ export async function POST(request: NextRequest) {
 
     // Check if API key is available
     if (!process.env.GROQ_API_KEY) {
-      return NextResponse.json({
-        success: false,
-        error: "AI features are not available - API key not configured",
-        fallbackResponse:
-          "I'd love to help analyze your journals, but AI features require an API key to be configured. For now, I can suggest some general productivity tips: try reviewing your journal entries weekly to identify patterns, set specific goals based on your reflections, and use your journal insights to prioritize your most important tasks.",
-      });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "AI features are not available - API key not configured",
+          fallbackResponse:
+            "I'd love to help analyze your journals, but AI features require an API key to be configured. For now, I can suggest some general productivity tips: try reviewing your journal entries weekly to identify patterns, set specific goals based on your reflections, and use your journal insights to prioritize your most important tasks.",
+        },
+        { status: 503 }
+      );
     }
 
     const systemPrompt = `You are a helpful, friendly, and human-like journal AI assistant. You have access to the user's journal entries and can:
@@ -68,19 +71,25 @@ Be empathetic, insightful, and helpful. Keep responses concise but meaningful.`;
       errorMessage.includes("decommissioned") ||
       errorMessage.includes("not supported")
     ) {
-      return NextResponse.json({
-        success: false,
-        error: "AI model temporarily unavailable",
-        fallbackResponse:
-          "I'm currently updating to use the latest AI models. In the meantime, here are some general insights: Regular journaling helps identify patterns in your thoughts and behaviors. Try reviewing your entries weekly to spot recurring themes, and consider setting specific goals based on what you discover about yourself.",
-      });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "AI model temporarily unavailable",
+          fallbackResponse:
+            "I'm currently updating to use the latest AI models. In the meantime, here are some general insights: Regular journaling helps identify patterns in your thoughts and behaviors. Try reviewing your entries weekly to spot recurring themes, and consider setting specific goals based on what you discover about yourself.",
+        },
+        { status: 503 }
+      );
     }
 
-    return NextResponse.json({
-      success: false,
-      error: "Failed to generate AI response",
-      fallbackResponse:
-        "I'm having trouble connecting to the AI service right now. Please try again later, or feel free to continue journaling - I'll be here when the connection is restored!",
-    });
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to generate AI response",
+        fallbackResponse:
+          "I'm having trouble connecting to the AI service right now. Please try again later, or feel free to continue journaling - I'll be here when the connection is restored!",
+      },
+      { status: 500 }
+    );
   }
 }

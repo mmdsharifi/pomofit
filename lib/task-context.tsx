@@ -5,6 +5,7 @@ import {
   createContext,
   useContext,
   useState,
+  useEffect,
   useCallback,
   type ReactNode,
 } from "react";
@@ -41,6 +42,32 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   const [isSyncing, setIsSyncing] = useState(false);
   const { user } = useAuth();
   const isOnline = useOnlineStatus();
+
+  // Rehydrate Date fields for tasks loaded from localStorage (BUG-21)
+  useEffect(() => {
+    setTasks((prevTasks) => {
+      let needsRehydration = false;
+      const rehydrated = prevTasks.map((task) => {
+        let createdAt = task.createdAt;
+        let completedAt = task.completedAt;
+
+        if (typeof createdAt === "string") {
+          createdAt = new Date(createdAt);
+          needsRehydration = true;
+        }
+        if (typeof completedAt === "string") {
+          completedAt = new Date(completedAt);
+          needsRehydration = true;
+        }
+
+        return typeof task.createdAt === "string" || typeof task.completedAt === "string"
+          ? { ...task, createdAt, completedAt }
+          : task;
+      });
+
+      return needsRehydration ? rehydrated : prevTasks;
+    });
+  }, [setTasks]);
 
   // Get task sync functions
   const {

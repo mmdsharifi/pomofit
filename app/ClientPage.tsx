@@ -213,9 +213,6 @@ function ClientContent() {
 
       {/* Service Worker Error Handler */}
       <ServiceWorkerErrorHandler />
-
-      {/* Performance Monitor (development only) */}
-      <PerformanceMonitor />
     </>
   );
 }

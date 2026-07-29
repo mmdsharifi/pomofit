@@ -352,6 +352,7 @@ export function TaskList() {
   }, [
     open,
     tasks,
+    displayTasks,
     editingTaskId,
     focusedTaskIndex,
     isInputFocused,

@@ -117,7 +117,7 @@ describe("useDailyRefresh", () => {
 
     // Verify tasks were saved and restored
     expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
-      "pomofit_tasks",
+      "pomofit-tasks",
       JSON.stringify(mockTasks)
     );
 
@@ -139,7 +139,7 @@ describe("useDailyRefresh", () => {
 
     // Should not try to save empty tasks
     expect(mockLocalStorage.setItem).not.toHaveBeenCalledWith(
-      "pomofit_tasks",
+      "pomofit-tasks",
       expect.anything()
     );
     expect(refreshAppData).toHaveBeenCalled();

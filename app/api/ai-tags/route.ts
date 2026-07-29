@@ -8,11 +8,14 @@ export async function POST(request: NextRequest) {
 
     // Check if API key is available
     if (!process.env.GROQ_API_KEY) {
-      return NextResponse.json({
-        success: false,
-        error: "AI features are not available - API key not configured",
-        tags: ["untagged"],
-      });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "AI features are not available - API key not configured",
+          tags: ["untagged"],
+        },
+        { status: 503 }
+      );
     }
 
     const prompt = `Given the following session information, generate 3-5 relevant, short tags (single words or short phrases, no #) as a JSON array. Only return the array, nothing else.\nTitle: ${title}\nNote: ${note}\nSession Number: ${sessionNumber}`;
@@ -34,10 +37,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, tags });
   } catch (error) {
     console.error("Error in ai-tags API:", error);
-    return NextResponse.json({
-      success: false,
-      error: "Failed to generate AI tags",
-      tags: ["untagged"],
-    });
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to generate AI tags",
+        tags: ["untagged"],
+      },
+      { status: 500 }
+    );
   }
 }

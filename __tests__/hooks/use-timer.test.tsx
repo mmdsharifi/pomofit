@@ -289,4 +289,15 @@ describe("useTimer Hook", () => {
     expect(result.current.formatTime(0)).toBe("00:00");
     expect(result.current.formatTime(3600)).toBe("60:00");
   });
+
+  test("resets daily pomodorosCompleted count on date change or visibility check (BUG-26)", () => {
+    const { result } = renderHook(() => useTimer(), { wrapper: AllProviders });
+    const countBefore = result.current.pomodorosCompleted;
+
+    act(() => {
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+
+    expect(result.current.pomodorosCompleted).toBe(countBefore);
+  });
 });

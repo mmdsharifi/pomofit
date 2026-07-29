@@ -22,13 +22,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
   const { toast } = useToast();
-
-  // Set isLoading to false immediately since we're not using Supabase
-  useState(() => {
-    setIsLoading(false);
-  });
 
   const signUp = async (email: string, password: string) => {
     // Mock sign up functionality

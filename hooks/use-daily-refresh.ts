@@ -4,8 +4,9 @@ import {
   isRestSessionActive,
   refreshAppData,
 } from "@/lib/session";
+import { STORAGE_KEYS } from "@/lib/constants";
 
-const TASKS_STORAGE_KEY = "pomofit_tasks";
+const TASKS_STORAGE_KEY = STORAGE_KEYS.TASKS;
 const CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
 // Export these for testing

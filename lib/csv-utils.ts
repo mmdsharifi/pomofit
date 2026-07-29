@@ -254,7 +254,7 @@ function formatCSVValue(value: unknown): string {
   }
 
   if (typeof value === "object") {
-    return JSON.stringify(value)
+    return JSON.stringify(value).replace(/"/g, '""')
   }
 
   // Escape quotes by doubling them

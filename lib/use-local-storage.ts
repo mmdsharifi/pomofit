@@ -8,8 +8,10 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
 
   // Use a ref to track if this is the first render
   const isFirstRender = useRef(true);
-  // Store initialValue in a ref to avoid dependency issues
-  const initialValueRef = useRef(initialValue);
+  // Track latest value in a ref for unmount flush & stale closure prevention
+  const latestValueRef = useRef<T>(storedValue);
+  latestValueRef.current = storedValue;
+
   // Debounce timer for localStorage writes
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -17,58 +19,66 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
   useEffect(() => {
     if (isFirstRender.current) {
       try {
-        // Get from local storage by key
         const item = localStorage.getItem(key);
-        // Parse stored json or if none return initialValue
         if (item) {
-          setStoredValue(JSON.parse(item));
+          const parsed = JSON.parse(item);
+          setStoredValue(parsed);
+          latestValueRef.current = parsed;
         }
       } catch (error) {
-        // If error also return initialValue
-        console.log(error);
+        console.error(`Error reading ${key} from localStorage:`, error);
       }
       isFirstRender.current = false;
     }
-  }, [key]); // Only re-run if key changes
+  }, [key]);
 
-  // Return a wrapped version of useState's setter function that
-  // persists the new value to localStorage with debouncing.
   const setValue = useCallback(
     (value: T | ((val: T) => T)) => {
       try {
-        // Allow value to be a function so we have same API as useState
-        const valueToStore =
-          value instanceof Function ? value(storedValue) : value;
-        // Save state immediately
-        setStoredValue(valueToStore);
+        setStoredValue((prevValue) => {
+          const valueToStore =
+            value instanceof Function ? value(prevValue) : value;
+          latestValueRef.current = valueToStore;
 
-        // Debounce localStorage writes to reduce performance impact
-        if (debounceTimerRef.current) {
-          clearTimeout(debounceTimerRef.current);
-        }
-
-        debounceTimerRef.current = setTimeout(() => {
-          // Save to local storage
-          if (typeof window !== "undefined") {
-            window.localStorage.setItem(key, JSON.stringify(valueToStore));
+          // Debounce localStorage writes
+          if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
           }
-        }, 100); // 100ms debounce
+
+          debounceTimerRef.current = setTimeout(() => {
+            if (typeof window !== "undefined") {
+              window.localStorage.setItem(key, JSON.stringify(valueToStore));
+              debounceTimerRef.current = null;
+            }
+          }, 100);
+
+          return valueToStore;
+        });
       } catch (error) {
-        // A more advanced implementation would handle the error case
-        console.log(error);
+        console.error(`Error setting ${key} in localStorage:`, error);
       }
     },
-    [storedValue, key]
+    [key]
   );
 
-  // Cleanup debounce timer on unmount
+  // Flush pending write on unmount
   useEffect(() => {
     return () => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
+        if (typeof window !== "undefined") {
+          try {
+            window.localStorage.setItem(
+              key,
+              JSON.stringify(latestValueRef.current)
+            );
+          } catch (error) {
+            console.error(`Error flushing ${key} on unmount:`, error);
+          }
+        }
       }
     };
-  }, []);
+  }, [key]);
 
   return [storedValue, setValue] as const;
 }

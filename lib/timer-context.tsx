@@ -20,6 +20,7 @@ import { useAuth } from "@/lib/auth-context";
 // Import task context directly
 import { useTasks as useTasksHook } from "@/lib/task-context";
 import { defaultFitOnWorkouts, defaultWorkoutSources } from "@/lib/fiton-data";
+import { generateId } from "@/lib/generate-id";
 
 export type TimerMode = "pomodoro" | "shortBreak" | "longBreak";
 
@@ -190,18 +191,33 @@ function TimerProviderInner({
     return 0;
   });
 
-  // Memoized count to avoid frequent recalculations
-  const lastUpdateRef = useRef<number>(0);
-  const memoizedPomodoroCount = useMemo(() => {
-    const now = Date.now();
+  // Daily reset check for pomodorosCompleted (BUG-26)
+  const lastCountDateRef = useRef<string>("");
+  useEffect(() => {
+    lastCountDateRef.current = new Date().toDateString();
 
-    // Only recalculate if it's been more than 5 minutes since last update
-    if (now - lastUpdateRef.current > 5 * 60 * 1000) {
-      lastUpdateRef.current = now;
-      return countTodaysPomodoroSessions();
-    }
-    return pomodorosCompleted;
-  }, [pomodorosCompleted]);
+    const checkAndResetDailyCount = () => {
+      const today = new Date().toDateString();
+      if (today !== lastCountDateRef.current) {
+        lastCountDateRef.current = today;
+        setPomodorosCompleted(countTodaysPomodoroSessions());
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        checkAndResetDailyCount();
+      }
+    };
+
+    const intervalId = setInterval(checkAndResetDailyCount, 60_000);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
 
   // Calculate total time based on current mode
   const getTotalTime = useCallback(
@@ -248,7 +264,7 @@ function TimerProviderInner({
       intervalRef.current = null;
     }
 
-    if (isRunning && timeLeft > 0) {
+    if (isRunning) {
       // Use a more efficient timer that updates every second
       const updateTimer = () => {
         setTimeLeft((prevTime) => {
@@ -268,7 +284,18 @@ function TimerProviderInner({
         }
       };
     }
-  }, [isRunning, timeLeft]);
+  }, [isRunning]);
+
+  // Sync active mode to localStorage for session checks
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (isRunning) {
+        localStorage.setItem("pomofit-active-mode", mode);
+      } else {
+        localStorage.removeItem("pomofit-active-mode");
+      }
+    }
+  }, [isRunning, mode]);
 
   // Add this new useEffect after the timer logic effect
   useEffect(() => {
@@ -505,15 +532,9 @@ function TimerProviderInner({
     tags: string[],
     autoStartRest = true
   ) => {
-    console.log(
-      "Adding session with task:",
-      currentSessionRef.current.taskId,
-      currentSessionRef.current.taskTitle
-    );
-
     // Create the session object
     const session = {
-      id: Date.now().toString(),
+      id: generateId(),
       startTime: currentSessionRef.current.startTime,
       duration: currentSessionRef.current.duration,
       mode: currentSessionRef.current.mode,

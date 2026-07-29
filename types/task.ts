@@ -4,5 +4,6 @@ export interface Task {
   completed: boolean
   order: number
   createdAt: Date
+  completedAt?: Date
   pomodoros?: number
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import { generateId } from "@/lib/generate-id";
+
 export interface PomodoroSession {
   id: string;
   startTime: Date;
@@ -48,6 +50,10 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 // Get history with caching
 export function getHistory(): PomodoroSession[] {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
   const now = Date.now();
 
   // Return cached data if it's still valid
@@ -321,7 +327,7 @@ export function addTaskCompletion(taskId: string, taskTitle: string) {
   try {
     const completions = getTaskCompletions();
     const newCompletion: TaskCompletionEvent = {
-      id: Date.now().toString(),
+      id: generateId(),
       taskId,
       taskTitle,
       completedAt: new Date(),

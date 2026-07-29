@@ -104,21 +104,38 @@ function TimerProviderInner({
   // Get settings sync functions
   const { initialSync: syncSettings, updateSettings } = useSettingsSync();
 
+  // Track latest settings in a ref to avoid infinite loops in effects
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
+
   // Sync settings when user logs in
   useEffect(() => {
     if (user) {
-      syncSettings(settings)
+      syncSettings(settingsRef.current)
         .then((syncedSettings) => {
           setSettings({
             ...syncedSettings,
-            devModeFastTimers: syncedSettings.devModeFastTimers ?? settings.devModeFastTimers ?? false,
+            devModeFastTimers:
+              syncedSettings.devModeFastTimers ??
+              settingsRef.current.devModeFastTimers ??
+              false,
           });
         })
         .catch((error) => {
           console.error("Error syncing settings:", error);
         });
     }
-  }, [user, syncSettings, settings, setSettings]);
+  }, [user, syncSettings, setSettings]);
+
+  // Push settings updates to Supabase when settings change (debounced)
+  useEffect(() => {
+    if (user) {
+      const timer = setTimeout(() => {
+        updateSettings(settings);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [user, settings, updateSettings]);
 
   const [mode, setMode] = useState<TimerMode>("pomodoro");
   const [timeLeft, setTimeLeft] = useState(() =>
@@ -242,15 +259,29 @@ function TimerProviderInner({
     ]
   );
 
+  // Track previous mode to know if mode changed vs settings changed
+  const prevModeRef = useRef<TimerMode>(mode);
+
   // Reset timer when mode changes or settings change
   useEffect(() => {
-    const totalTime = getTotalTime(mode);
-    setTimeLeft(totalTime);
-    // Only reset isRunning if we're not in a completion state
-    if (!isCompletingTimerRef.current) {
-      setIsRunning(false);
+    const modeChanged = prevModeRef.current !== mode;
+    prevModeRef.current = mode;
+
+    if (modeChanged) {
+      const totalTime = getTotalTime(mode);
+      setTimeLeft(totalTime);
+      if (!isCompletingTimerRef.current) {
+        setIsRunning(false);
+      }
+    } else {
+      // If settings changed while timer is not running, update total time
+      if (!isRunning) {
+        const totalTime = getTotalTime(mode);
+        setTimeLeft(totalTime);
+      }
+      // If isRunning is true, do not reset running timer — new durations apply next session
     }
-  }, [mode, getTotalTime]);
+  }, [mode, getTotalTime, isRunning]);
 
   // Timer logic effect
   useEffect(() => {

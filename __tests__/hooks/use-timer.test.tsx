@@ -300,4 +300,36 @@ describe("useTimer Hook", () => {
 
     expect(result.current.pomodorosCompleted).toBe(countBefore);
   });
+
+  test("does not reset running timer when settings change while isRunning is true", () => {
+    const { result } = renderHook(() => useTimer(), { wrapper: AllProviders });
+
+    // Start timer
+    act(() => {
+      result.current.toggleTimer();
+    });
+
+    expect(result.current.isRunning).toBe(true);
+    const initialTimeLeft = result.current.timeLeft;
+
+    // Simulate settings update via cross-instance sync
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent("pomofit-storage-sync", {
+          detail: {
+            key: "pomofit-settings",
+            value: {
+              ...result.current.settings,
+              pomodoroTime: 30,
+            },
+            senderId: "other-instance",
+          },
+        })
+      );
+    });
+
+    // The running timer should NOT be paused or reset
+    expect(result.current.isRunning).toBe(true);
+    expect(result.current.timeLeft).toBe(initialTimeLeft);
+  });
 });
